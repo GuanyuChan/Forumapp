@@ -1,28 +1,25 @@
+
 'use client';
 import type { Post as PostType } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { MessageSquare, Flag, UserCircle2, MoreVertical } from 'lucide-react';
+import { Flag, UserCircle2, MoreVertical } from 'lucide-react'; // MessageSquare removed
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import React, { useState } from 'react';
-import { CreatePostForm } from './CreatePostForm';
+import React from 'react'; // useState removed
+// CreatePostForm import removed
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useToast } from '@/hooks/use-toast';
+// useToast import removed as it's no longer used for replies here
 
 interface PostCardProps {
   post: PostType;
-  onReply: (
-    topicId: string,
-    content: string,
-    parentPostId: string | undefined
-  ) => Promise<{ success: boolean; error?: string; post?: PostType }>;
+  // onReply prop removed
   topicId: string;
   level?: number;
   currentUserId?: string;
@@ -30,27 +27,8 @@ interface PostCardProps {
 
 const DEFAULT_AVATAR_PLACEHOLDER = 'https://placehold.co/100x100.png';
 
-export function PostCard({ post, onReply, topicId, level = 0, currentUserId }: PostCardProps) {
-  const [showReplyForm, setShowReplyForm] = useState(false);
-  const { toast } = useToast();
-
-  const handleReplySubmit = async (content: string) => {
-    const result = await onReply(topicId, content, post.id);
-    if (result.success) {
-      setShowReplyForm(false);
-      toast({
-        title: "回复已发布!",
-        description: "您的回复已添加到讨论中。",
-        variant: "default",
-      });
-    } else {
-      toast({
-        title: "发布回复时出错",
-        description: result.error || "无法发布您的回复。请再试一次。",
-        variant: "destructive",
-      });
-    }
-  };
+export function PostCard({ post, topicId, level = 0, currentUserId }: PostCardProps) {
+  // showReplyForm state and handleReplySubmit function removed
 
   const isOwnPost = currentUserId && post.author.id === currentUserId;
   const authorDisplayName = post.author.username;
@@ -107,21 +85,10 @@ export function PostCard({ post, onReply, topicId, level = 0, currentUserId }: P
         )}
       </CardContent>
       <CardFooter className="flex items-center justify-start space-x-4 p-4 pt-0">
-        <Button variant="ghost" size="sm" onClick={() => setShowReplyForm(!showReplyForm)} className="text-muted-foreground hover:text-primary">
-          <MessageSquare className="mr-1.5 h-4 w-4" /> 回复
-        </Button>
+        {/* Reply button removed */}
       </CardFooter>
 
-      {showReplyForm && (
-        <div className="p-4 border-t">
-          <CreatePostForm
-            onSubmit={async (content) => await handleReplySubmit(content)}
-            placeholder={`回复 ${authorDisplayName}...`}
-            submitButtonText="发布回复"
-            isReplyForm={true}
-          />
-        </div>
-      )}
+      {/* Reply form section removed */}
 
       {post.replies && post.replies.length > 0 && (
         <div className={`p-4 ${level === 0 ? 'border-t' : ''}`}>
@@ -129,7 +96,7 @@ export function PostCard({ post, onReply, topicId, level = 0, currentUserId }: P
             <PostCard
               key={reply.id}
               post={reply}
-              onReply={onReply}
+              // onReply prop removed
               topicId={topicId}
               level={level + 1}
               currentUserId={currentUserId}

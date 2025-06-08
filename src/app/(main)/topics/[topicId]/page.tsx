@@ -5,7 +5,7 @@ import { fetchDiscussionDetails, submitReplyToDiscussion } from '@/services/flar
 import { placeholderUser } from '@/lib/placeholder-data';
 
 import { PostCard } from '@/components/PostCard';
-import { RootReplyFormWrapper } from '@/components/RootReplyFormWrapper';
+// RootReplyFormWrapper import removed as it's no longer used
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { UserCircle2, Clock, ArrowLeft } from 'lucide-react';
@@ -20,6 +20,9 @@ const getCurrentUser = (): User => {
   return placeholderUser;
 };
 
+// handleReplyAction is kept for now, as PostCard might still expect it,
+// even if it doesn't use it. Or it might be used by other means in the future.
+// If PostCard's onReply prop is fully removed, this can be removed if not used elsewhere.
 export async function handleReplyAction(
   topicId: string,
   content: string,
@@ -130,17 +133,14 @@ export default async function TopicPage({ params }: { params: { topicId: string 
           <PostCard
             key={post.id}
             post={post}
-            onReply={handleReplyAction}
+            // onReply prop removed as PostCard will no longer handle replies
             topicId={topic.id}
             currentUserId={currentUser.id}
           />
         ))}
       </div>
 
-      <div className="pt-6 border-t">
-        <h2 className="text-xl font-semibold mb-3 text-foreground font-headline">参与讨论</h2>
-        <RootReplyFormWrapper topicId={topic.id} onReplyAction={handleReplyAction} />
-      </div>
+      {/* "参与讨论" (Participate in Discussion) section removed */}
     </div>
   );
 }

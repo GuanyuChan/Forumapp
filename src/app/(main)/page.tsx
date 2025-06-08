@@ -16,12 +16,7 @@ export default async function HomePage() {
         <h1 className="text-3xl font-bold tracking-tight text-foreground font-headline">
           欢迎来到 11A4008深论坛
         </h1>
-        <Link href="/new-topic">
-          <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
-            <PlusCircle className="mr-2 h-5 w-5" />
-            创建新主题
-          </Button>
-        </Link>
+        {/* "创建新主题" button removed from here */}
       </section>
 
       <section className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -51,18 +46,7 @@ export default async function HomePage() {
         )}
       </section>
       
-      <section>
-        <h2 className="text-2xl font-semibold mb-6 text-foreground font-headline">最近主题 (占位符)</h2>
-        {placeholderTopics.length > 0 ? (
-          <div className="space-y-4">
-            {placeholderTopics.map(topic => (
-              <TopicListItem key={topic.id} topic={topic} />
-            ))}
-          </div>
-        ) : (
-          <p className="text-muted-foreground">还没有主题，快来创建第一个吧！</p>
-        )}
-      </section>
+      {/* "最近主题" section removed */}
     </div>
   );
 }
