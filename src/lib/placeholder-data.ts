@@ -1,4 +1,5 @@
-import type { User, Post, Topic, Category } from './types';
+
+import type { User, Post, Topic, Category, CategorySummary } from './types';
 
 const users: User[] = [
   { id: 'user1', username: 'Alice', avatarUrl: 'https://placehold.co/100x100.png', bio: 'Loves coding and cats.', joinedAt: '2023-01-15T10:00:00Z' },
@@ -87,9 +88,12 @@ export const placeholderTopics: Topic[] = [
     title: 'Getting Started with Zenith Forums',
     author: users[0],
     createdAt: '2023-05-01T12:00:00Z',
-    postCount: 4, // Includes initial post and replies
+    postCount: 4, 
     viewCount: 120,
-    tags: ['welcome', 'introduction'],
+    tags: [
+        { id: 'tag-welcome', name: 'welcome', slug: 'welcome' },
+        { id: 'tag-introduction', name: 'introduction', slug: 'introduction' }
+    ],
     firstPost: posts[0],
     category: { id: 'cat1', name: 'General Discussion', slug: 'general-discussion' },
   },
@@ -100,7 +104,11 @@ export const placeholderTopics: Topic[] = [
     createdAt: '2023-05-02T10:30:00Z',
     postCount: 2,
     viewCount: 85,
-    tags: ['nextjs', 'javascript', 'webdev'],
+    tags: [
+        { id: 'tag-nextjs', name: 'nextjs', slug: 'nextjs' },
+        { id: 'tag-javascript', name: 'javascript', slug: 'javascript' },
+        { id: 'tag-webdev', name: 'webdev', slug: 'webdev' }
+    ],
     firstPost: posts[1],
     category: { id: 'cat2', name: 'Web Development', slug: 'web-development' },
   },
@@ -111,7 +119,11 @@ export const placeholderTopics: Topic[] = [
     createdAt: '2023-05-03T15:00:00Z',
     postCount: 1,
     viewCount: 250,
-    tags: ['opensource', 'projects', 'share'],
+    tags: [
+        { id: 'tag-opensource', name: 'opensource', slug: 'opensource' },
+        { id: 'tag-projects', name: 'projects', slug: 'projects' },
+        { id: 'tag-share', name: 'share', slug: 'share' }
+    ],
     firstPost: posts[2],
     category: { id: 'cat3', name: 'Showcase', slug: 'showcase' },
   },
@@ -122,7 +134,11 @@ export const placeholderTopics: Topic[] = [
     createdAt: '2023-05-04T09:00:00Z',
     postCount: 2,
     viewCount: 95,
-    tags: ['software-design', 'programming', 'best-practices'],
+    tags: [
+        { id: 'tag-software-design', name: 'software-design', slug: 'software-design' },
+        { id: 'tag-programming', name: 'programming', slug: 'programming' },
+        { id: 'tag-best-practices', name: 'best-practices', slug: 'best-practices' }
+    ],
     firstPost: posts[3],
     category: { id: 'cat2', name: 'Web Development', slug: 'web-development' },
   },
@@ -161,3 +177,27 @@ export const placeholderCategories: Category[] = [
 export const getPlaceholderTopicById = (id: string): Topic | undefined => placeholderTopics.find(topic => topic.id === id);
 export const getPlaceholderUserById = (id: string): User | undefined => users.find(user => user.id === id);
 export const placeholderUser = users[0]; // Default user for profile page etc.
+
+// Helper to convert string tags to CategorySummary objects for placeholderTopics
+function convertPlaceholderTags(topics: Topic[]): Topic[] {
+  return topics.map(topic => {
+    if (topic.tags && topic.tags.every(tag => typeof tag === 'string')) {
+      return {
+        ...topic,
+        tags: (topic.tags as unknown as string[]).map(tagName => ({
+          id: `tag-${topic.id}-${tagName.toLowerCase().replace(/\s+/g, '-')}`, // Generate a unique ID
+          name: tagName,
+          slug: tagName.toLowerCase().replace(/\s+/g, '-') // Generate a simple slug
+        }))
+      };
+    }
+    return topic;
+  });
+}
+
+// The placeholderTopics are now defined with CategorySummary objects directly, so conversion is not needed here.
+// If they were still strings, you might use:
+// export const processedPlaceholderTopics = convertPlaceholderTags(rawPlaceholderTopics);
+// For simplicity, I've updated placeholderTopics directly.
+
+    
