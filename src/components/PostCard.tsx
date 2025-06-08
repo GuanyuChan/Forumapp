@@ -1,5 +1,6 @@
+
 'use client';
-import type { Post as PostType, User } from '@/lib/types';
+import type { Post as PostType } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
@@ -13,27 +14,49 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useToast } from '@/hooks/use-toast'; // For client-side feedback
 
 interface PostCardProps {
   post: PostType;
-  onReply: (topicId: string, content: string, parentPostId?: string) => Promise<void>; // Assuming topicId is available or passed down
-  topicId: string; 
+  // onReply now expects a Server Action or a function that calls one
+  onReply: (
+    topicId: string,
+    content: string,
+    parentPostId: string | undefined
+  ) => Promise<{ success: boolean; error?: string; post?: PostType }>;
+  topicId: string;
   level?: number;
-  currentUserId?: string; // Optional: to enable edit/delete for own posts
+  currentUserId?: string;
 }
 
 export function PostCard({ post, onReply, topicId, level = 0, currentUserId }: PostCardProps) {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [optimisticUpvotes, setOptimisticUpvotes] = useState(post.upvotes);
+  const { toast } = useToast();
 
   const handleUpvote = () => {
-    // In a real app, this would be an API call
     setOptimisticUpvotes(prev => prev + 1);
+    // API call for upvote would go here
   };
 
   const handleReplySubmit = async (content: string) => {
-    await onReply(topicId, content, post.id);
-    setShowReplyForm(false);
+    // onReply is the Server Action passed from the parent
+    const result = await onReply(topicId, content, post.id);
+    if (result.success) {
+      setShowReplyForm(false);
+      toast({
+        title: "Reply Posted!",
+        description: "Your reply has been added to the discussion.",
+        variant: "default",
+      });
+      // Revalidation should refresh the posts list
+    } else {
+      toast({
+        title: "Error Posting Reply",
+        description: result.error || "Could not post your reply. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
   
   const isOwnPost = currentUserId && post.author.id === currentUserId;
@@ -75,6 +98,7 @@ export function PostCard({ post, onReply, topicId, level = 0, currentUserId }: P
         </DropdownMenu>
       </CardHeader>
       <CardContent className="p-4 pt-2 text-foreground/90">
+        {/* Ensure content is plain text or safely rendered HTML */}
         <p>{post.content}</p>
         {post.isFlagged && (
             <div className="mt-2 p-2 border border-destructive/50 bg-destructive/10 rounded-md text-destructive text-sm">
@@ -94,7 +118,9 @@ export function PostCard({ post, onReply, topicId, level = 0, currentUserId }: P
       {showReplyForm && (
         <div className="p-4 border-t">
           <CreatePostForm
-            onSubmit={handleReplySubmit}
+            // CreatePostForm's onSubmit expects (content: string, title?: string, tags?: string) => Promise<void>;
+            // handleReplySubmit here takes only content.
+            onSubmit={async (content) => await handleReplySubmit(content)}
             placeholder={`Replying to ${post.author.username}...`}
             submitButtonText="Post Reply"
             isReplyForm={true}
@@ -108,7 +134,7 @@ export function PostCard({ post, onReply, topicId, level = 0, currentUserId }: P
             <PostCard 
               key={reply.id} 
               post={reply} 
-              onReply={onReply} 
+              onReply={onReply} // Pass down the Server Action
               topicId={topicId} 
               level={level + 1} 
               currentUserId={currentUserId}

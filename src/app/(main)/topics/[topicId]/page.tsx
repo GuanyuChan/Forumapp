@@ -1,7 +1,7 @@
 
 import { notFound as nextNotFound } from 'next/navigation';
 import type { Topic, Post as PostType, User } from '@/lib/types';
-import { fetchDiscussionDetails } from '@/services/flarum';
+import { fetchDiscussionDetails, submitReplyToDiscussion } from '@/services/flarum';
 import { placeholderUser } from '@/lib/placeholder-data';
 
 import { PostCard } from '@/components/PostCard';
@@ -10,40 +10,63 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserCircle2, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
+import { revalidatePath } from 'next/cache';
 
 // Helper function to simulate fetching current user details - This should ideally come from server session.
 const getCurrentUser = (): User => {
   // In a real app, this would come from an authentication system.
+  // For now, it matches the placeholderUser used in the original client component version
   return placeholderUser;
 };
 
+// SERVER ACTION for handling replies
+export async function handleReplyAction(
+  topicId: string,
+  content: string,
+  parentPostId: string | undefined // parentPostId is not directly used by Flarum's basic post creation but kept for potential future use
+): Promise<{ success: boolean; error?: string; post?: PostType }> {
+  'use server'; // Marks this as a Server Action
+
+  if (!topicId || !content) {
+    return { success: false, error: "Topic ID and content are required." };
+  }
+
+  const currentUserForAction = getCurrentUser(); // Get user details for the action
+
+  const newPost = await submitReplyToDiscussion(topicId, content, currentUserForAction);
+
+  if (newPost) {
+    revalidatePath(`/topics/${topicId}`);
+    revalidatePath(`/t/${topicId}`); // Also revalidate category page if topic slugs are used as category IDs
+    return { success: true, post: newPost };
+  } else {
+    return { success: false, error: "Failed to post reply." };
+  }
+}
+
+
 export default async function TopicPage({ params }: { params: { topicId: string } }) {
   const topicIdFromParam = params.topicId;
-  const currentUser = getCurrentUser(); // Fetch current user details
+  const currentUser = getCurrentUser(); // For display purposes and passing to PostCard
 
   const fetchedTopicAndPosts = await fetchDiscussionDetails(topicIdFromParam);
 
   if (!fetchedTopicAndPosts) {
-    nextNotFound(); // Triggers the Next.js 404 page
+    nextNotFound();
   }
 
   const { topic, posts: initialPosts } = fetchedTopicAndPosts;
 
-  // Placeholder for reply handling - this will need to be converted to a Server Action
-  const handleCreateReply = async (content: string, parentPostId?: string) => {
-    // If this were a Server Action defined in this file, it would need 'use server';
-    // For now, it's just a placeholder.
-    if (!topic) return;
-    console.log('Replying (Server Action to be implemented):', { topicId: topic.id, content, parentPostId, userId: currentUser.id });
-    // Example of what a server action call might look like:
-    // const result = await submitReplyAction({ discussionId: topic.id, content, parentPostId });
-    // if (result.success) {
-    //   // revalidatePath(`/topics/${topic.id}`);
-    //   // toast({ title: "Reply posted!" });
-    // } else {
-    //   // toast({ title: "Error", description: result.error, variant: "destructive" });
-    // }
+  // Handler for the main reply form (replying to the topic itself)
+  const handleRootReplySubmit = async (replyContent: string) => {
+    // This function is called by CreatePostForm, which expects specific params.
+    // We'll call the server action directly.
+    // Since CreatePostForm's onSubmit gives (content, title, tags),
+    // and for replies we only need content, we adapt here.
+    // The 'title' and 'tags' args from CreatePostForm are ignored for replies.
+    return handleReplyAction(topic.id, replyContent, undefined);
   };
+
 
   return (
     <div className="space-y-6">
@@ -96,7 +119,8 @@ export default async function TopicPage({ params }: { params: { topicId: string 
           <PostCard
             key={post.id}
             post={post}
-            onReply={handleCreateReply} // This onReply will need to trigger a server action. PostCard is a client component.
+            // Pass the Server Action directly. PostCard's internal handler will call this.
+            onReply={handleReplyAction} 
             topicId={topic.id}
             currentUserId={currentUser.id}
           />
@@ -105,9 +129,13 @@ export default async function TopicPage({ params }: { params: { topicId: string 
 
       <div className="pt-6 border-t">
         <h2 className="text-xl font-semibold mb-3 text-foreground font-headline">Join the Conversation</h2>
-        {/* CreatePostForm is a Client Component. Its onSubmit will eventually call a Server Action. */}
         <CreatePostForm
-          onSubmit={(content) => handleCreateReply(content)}
+          // The onSubmit for CreatePostForm expects (content: string, title?: string, tags?: string)
+          // We adapt it to call our server action. Title and tags are ignored for replies.
+          onSubmit={async (content) => {
+            await handleRootReplySubmit(content);
+            // Optionally handle success/error feedback if not done via toast in action
+          }}
           placeholder="Write your reply..."
           submitButtonText="Post Reply"
           isReplyForm={true}
@@ -117,7 +145,6 @@ export default async function TopicPage({ params }: { params: { topicId: string 
   );
 }
 
-// Optional: Generate metadata if this remains a server component or for build time
 export async function generateMetadata({ params }: { params: { topicId: string }}) {
   const { topicId } = params;
   const fetchedData = await fetchDiscussionDetails(topicId);
