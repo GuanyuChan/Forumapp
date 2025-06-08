@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, type FormEvent } from 'react';
@@ -8,11 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface CreatePostFormProps {
-  onSubmit: (content: string, title?: string, tags?: string) => Promise<void>;
+  onSubmit: (content: string, title?: string, tags?: string) => Promise<any>; // Changed Promise<void> to Promise<any>
   placeholder?: string;
   submitButtonText?: string;
-  isNewTopic?: boolean; // If true, will show title and tags input
-  isReplyForm?: boolean; // Styles slightly differently for replies
+  isNewTopic?: boolean;
+  isReplyForm?: boolean;
 }
 
 export function CreatePostForm({
@@ -24,24 +25,34 @@ export function CreatePostForm({
 }: CreatePostFormProps) {
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
-  const [tags, setTags] = useState(''); // Comma-separated tags
+  const [tags, setTags] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!content || (isNewTopic && !title)) return; // Basic validation
+    if (!content || (isNewTopic && !title)) {
+      // Basic validation: content is always required. If it's a new topic, title is also required.
+      // For replies, only content is required (title/tags inputs are not shown).
+      if (isReplyForm && !content) return;
+      if (isNewTopic && (!content || !title)) return;
+      if (!isNewTopic && !isReplyForm && !content) return; // Generic post case if ever used
+    }
+
 
     setIsLoading(true);
     try {
       await onSubmit(content, title, tags);
+      // Clear form only on successful submission.
+      // If onSubmit throws or returns error, form content is preserved.
       setContent('');
       if (isNewTopic) {
         setTitle('');
         setTags('');
       }
     } catch (error) {
-      console.error("Failed to submit post:", error);
-      // Handle error (e.g., show toast notification)
+      console.error("Failed to submit post via CreatePostForm:", error);
+      // Error is handled by the caller (e.g. RootReplyFormWrapper shows a toast)
+      // We don't clear the form here to allow user to retry.
     } finally {
       setIsLoading(false);
     }
@@ -67,13 +78,14 @@ export function CreatePostForm({
       )}
       <div>
         {isNewTopic && <Label htmlFor="topic-content" className="mb-1 block font-medium">Your Post</Label>}
+        {!isNewTopic && !isReplyForm && <Label htmlFor="post-content" className="mb-1 block font-medium">Your Post</Label>}
         <Textarea
-          id={isNewTopic ? "topic-content" : "reply-content"}
+          id={isNewTopic ? "topic-content" : (isReplyForm ? "reply-content" : "post-content")}
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder={placeholder}
           required
-          rows={isNewTopic ? 5 : 3}
+          rows={isNewTopic ? 5 : (isReplyForm ? 3 : 4)}
           disabled={isLoading}
           className="bg-background"
         />
@@ -92,7 +104,7 @@ export function CreatePostForm({
           </div>
       )}
       <div className="flex justify-end">
-        <Button type="submit" disabled={isLoading} className="bg-accent text-accent-foreground hover:bg-accent/90">
+        <Button type="submit" disabled={isLoading || !content.trim()} className="bg-accent text-accent-foreground hover:bg-accent/90">
           {isLoading ? "Submitting..." : submitButtonText}
         </Button>
       </div>
@@ -100,7 +112,7 @@ export function CreatePostForm({
   );
 
   if (isReplyForm) {
-    return formContent; // Render form directly for replies
+    return formContent; 
   }
 
   return (
@@ -114,3 +126,4 @@ export function CreatePostForm({
     </Card>
   );
 }
+

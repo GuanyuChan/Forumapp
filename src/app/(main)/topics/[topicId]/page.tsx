@@ -2,10 +2,11 @@
 import { notFound as nextNotFound } from 'next/navigation';
 import type { Topic, Post as PostType, User } from '@/lib/types';
 import { fetchDiscussionDetails, submitReplyToDiscussion } from '@/services/flarum';
-import { placeholderUser } from '@/lib/placeholder-data';
+import { placeholderUser } from '@/lib/placeholder-data'; // Assuming this is for current user mock
 
 import { PostCard } from '@/components/PostCard';
-import { CreatePostForm } from '@/components/CreatePostForm';
+// CreatePostForm is now used within RootReplyFormWrapper for the main reply
+import { RootReplyFormWrapper } from '@/components/RootReplyFormWrapper';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserCircle2, Clock } from 'lucide-react';
 import Link from 'next/link';
@@ -15,7 +16,6 @@ import { revalidatePath } from 'next/cache';
 // Helper function to simulate fetching current user details - This should ideally come from server session.
 const getCurrentUser = (): User => {
   // In a real app, this would come from an authentication system.
-  // For now, it matches the placeholderUser used in the original client component version
   return placeholderUser;
 };
 
@@ -23,21 +23,22 @@ const getCurrentUser = (): User => {
 export async function handleReplyAction(
   topicId: string,
   content: string,
-  parentPostId: string | undefined // parentPostId is not directly used by Flarum's basic post creation but kept for potential future use
+  parentPostId: string | undefined
 ): Promise<{ success: boolean; error?: string; post?: PostType }> {
-  'use server'; // Marks this as a Server Action
+  'use server';
 
   if (!topicId || !content) {
     return { success: false, error: "Topic ID and content are required." };
   }
 
-  const currentUserForAction = getCurrentUser(); // Get user details for the action
+  const currentUserForAction = getCurrentUser();
 
   const newPost = await submitReplyToDiscussion(topicId, content, currentUserForAction);
 
   if (newPost) {
     revalidatePath(`/topics/${topicId}`);
-    revalidatePath(`/t/${topicId}`); // Also revalidate category page if topic slugs are used as category IDs
+    // Consider revalidating category/tag pages if they show reply counts or last post info
+    // For example, if topic.category.slug exists: revalidatePath(`/t/${topic.category.slug}`);
     return { success: true, post: newPost };
   } else {
     return { success: false, error: "Failed to post reply." };
@@ -47,7 +48,7 @@ export async function handleReplyAction(
 
 export default async function TopicPage({ params }: { params: { topicId: string } }) {
   const topicIdFromParam = params.topicId;
-  const currentUser = getCurrentUser(); // For display purposes and passing to PostCard
+  const currentUser = getCurrentUser();
 
   const fetchedTopicAndPosts = await fetchDiscussionDetails(topicIdFromParam);
 
@@ -57,16 +58,7 @@ export default async function TopicPage({ params }: { params: { topicId: string 
 
   const { topic, posts: initialPosts } = fetchedTopicAndPosts;
 
-  // Handler for the main reply form (replying to the topic itself)
-  const handleRootReplySubmit = async (replyContent: string) => {
-    // This function is called by CreatePostForm, which expects specific params.
-    // We'll call the server action directly.
-    // Since CreatePostForm's onSubmit gives (content, title, tags),
-    // and for replies we only need content, we adapt here.
-    // The 'title' and 'tags' args from CreatePostForm are ignored for replies.
-    return handleReplyAction(topic.id, replyContent, undefined);
-  };
-
+  // The direct handleRootReplySubmit is removed, RootReplyFormWrapper handles this.
 
   return (
     <div className="space-y-6">
@@ -119,7 +111,6 @@ export default async function TopicPage({ params }: { params: { topicId: string 
           <PostCard
             key={post.id}
             post={post}
-            // Pass the Server Action directly. PostCard's internal handler will call this.
             onReply={handleReplyAction} 
             topicId={topic.id}
             currentUserId={currentUser.id}
@@ -129,17 +120,7 @@ export default async function TopicPage({ params }: { params: { topicId: string 
 
       <div className="pt-6 border-t">
         <h2 className="text-xl font-semibold mb-3 text-foreground font-headline">Join the Conversation</h2>
-        <CreatePostForm
-          // The onSubmit for CreatePostForm expects (content: string, title?: string, tags?: string)
-          // We adapt it to call our server action. Title and tags are ignored for replies.
-          onSubmit={async (content) => {
-            await handleRootReplySubmit(content);
-            // Optionally handle success/error feedback if not done via toast in action
-          }}
-          placeholder="Write your reply..."
-          submitButtonText="Post Reply"
-          isReplyForm={true}
-        />
+        <RootReplyFormWrapper topicId={topic.id} onReplyAction={handleReplyAction} />
       </div>
     </div>
   );
