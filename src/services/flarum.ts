@@ -19,7 +19,7 @@ import type {
 const FLARUM_API_URL = process.env.FLARUM_API_URL;
 const FLARUM_API_KEY = process.env.FLARUM_API_KEY;
 
-const DEFAULT_AVATAR = 'https://placehold.co/100x100.png';
+const DEFAULT_AVATAR_PLACEHOLDER = 'https://placehold.co/100x100.png';
 
 async function flarumFetch<T>(endpoint: string, options?: RequestInit): Promise<T | null> {
   if (!FLARUM_API_URL) {
@@ -70,11 +70,11 @@ function findIncludedResource<T extends FlarumIncludedResource>(
 }
 
 function transformFlarumUser(userResource?: FlarumUser): User {
-  if (!userResource?.attributes || !userResource.id) { // Ensure ID is also present
+  if (!userResource?.attributes || !userResource.id) {
     return {
       id: 'unknown',
       username: 'Unknown User',
-      avatarUrl: DEFAULT_AVATAR,
+      avatarUrl: DEFAULT_AVATAR_PLACEHOLDER,
       joinedAt: new Date().toISOString(),
       bio: '',
     };
@@ -82,7 +82,7 @@ function transformFlarumUser(userResource?: FlarumUser): User {
   return {
     id: userResource.id,
     username: userResource.attributes.displayName || userResource.attributes.username || 'Unknown User',
-    avatarUrl: userResource.attributes.avatarUrl || DEFAULT_AVATAR,
+    avatarUrl: userResource.attributes.avatarUrl || DEFAULT_AVATAR_PLACEHOLDER,
     joinedAt: userResource.attributes.joinTime || new Date().toISOString(),
     bio: (userResource.attributes as any).bio || '',
   };
@@ -91,18 +91,18 @@ function transformFlarumUser(userResource?: FlarumUser): User {
 function transformFlarumPost(postResource?: FlarumPostType, included?: FlarumIncludedResource[]): Post | undefined {
   if (!postResource?.attributes) return undefined;
 
-  let author: User; // Changed from User | undefined
+  let author: User;
   const authorData = postResource.relationships?.user?.data as FlarumResourceIdentifier;
   if (authorData && authorData.id) {
     const authorResource = findIncludedResource<FlarumUser>(included, 'users', authorData.id);
-    author = transformFlarumUser(authorResource); // transformFlarumUser now always returns a User
+    author = transformFlarumUser(authorResource);
   } else {
-    author = transformFlarumUser(); // Get default unknown user
+    author = transformFlarumUser(); // Default unknown user
   }
 
   let plainContent = postResource.attributes.contentHtml || '';
   if (postResource.attributes.contentType === 'comment' || postResource.attributes.contentType === 'discussionStickied') {
-      plainContent = plainContent.replace(/<[^>]*>?/gm, '');
+      plainContent = plainContent.replace(/<[^>]*>?/gm, ''); // Basic HTML stripping
   }
 
 
@@ -133,13 +133,13 @@ function transformFlarumTagToCategorySummary(tagResource?: FlarumTag): CategoryS
 function transformFlarumDiscussion(discussion: FlarumDiscussion, included?: FlarumIncludedResource[]): Topic {
   const attributes = discussion.attributes;
 
-  let author: User; // Changed from User | undefined
+  let author: User;
   const authorData = discussion.relationships?.user?.data as FlarumResourceIdentifier;
    if (authorData && authorData.id) {
     const authorResource = findIncludedResource<FlarumUser>(included, 'users', authorData.id);
     author = transformFlarumUser(authorResource);
   } else {
-    author = transformFlarumUser(); // Get default unknown user
+    author = transformFlarumUser();
   }
 
   let firstPost: Post | undefined;
@@ -147,18 +147,15 @@ function transformFlarumDiscussion(discussion: FlarumDiscussion, included?: Flar
   if (firstPostData && firstPostData.id) {
     const postResource = findIncludedResource<FlarumPostType>(included, 'posts', firstPostData.id);
     firstPost = transformFlarumPost(postResource, included);
-    // Ensure firstPost's author is also robustly handled if it wasn't fully included
     if (firstPost && firstPost.author.id === 'unknown' && author.id !== 'unknown') {
-        // If discussion author is known but first post author isn't, assume discussion author posted first
-        // This is a heuristic. A more robust way is to ensure firstPost.user is always properly included by Flarum if possible.
         const firstPostAuthorResource = findIncludedResource<FlarumUser>(included, 'users', authorData?.id);
         if (firstPostAuthorResource) {
             firstPost.author = transformFlarumUser(firstPostAuthorResource);
         } else {
-            firstPost.author = author; // Fallback to discussion author
+            firstPost.author = author;
         }
     } else if (firstPost && firstPost.author.id === 'unknown') {
-        firstPost.author = transformFlarumUser(); // Ensure it's the default unknown user object
+        firstPost.author = transformFlarumUser();
     }
   }
 
@@ -183,16 +180,35 @@ function transformFlarumDiscussion(discussion: FlarumDiscussion, included?: Flar
     const userResource = findIncludedResource<FlarumUser>(included, 'users', lastPostedUserData.id);
     lastPostedUser = transformFlarumUser(userResource);
   } else {
-    lastPostedUser = transformFlarumUser(); // Default unknown user
+    lastPostedUser = transformFlarumUser();
   }
 
-  let primaryCategory = discussionTags.find(tag => {
-    const flarumTag = findIncludedResource<FlarumTag>(included, 'tags', tag.id);
-    return flarumTag && !flarumTag.attributes.isChild && flarumTag.attributes.position !== null; // Prioritize positioned, non-child tags
-  }) || discussionTags.find(tag => { // Fallback to any non-child tag
-    const flarumTag = findIncludedResource<FlarumTag>(included, 'tags', tag.id);
-    return flarumTag && !flarumTag.attributes.isChild;
-  }) || discussionTags[0]; // Ultimate fallback to the first tag
+  let primaryCategory: CategorySummary | undefined = undefined;
+  if (discussionTags.length > 0) {
+    const potentialPrimaryTagResources = discussionTags
+      .map(summary => findIncludedResource<FlarumTag>(included, 'tags', summary.id))
+      .filter(tag => tag && !tag.attributes.isChild && tag.attributes.position !== null)
+      // Sort by position, ascending (lower position = more primary)
+      .sort((a, b) => (a!.attributes.position!) - (b!.attributes.position!));
+
+    if (potentialPrimaryTagResources.length > 0 && potentialPrimaryTagResources[0]) {
+      primaryCategory = transformFlarumTagToCategorySummary(potentialPrimaryTagResources[0]);
+    } else {
+      // Fallback 1: first non-child tag (no specific position or all positions are null)
+      const firstNonChildTagResource = discussionTags
+        .map(summary => findIncludedResource<FlarumTag>(included, 'tags', summary.id))
+        .find(tag => tag && !tag.attributes.isChild);
+      if (firstNonChildTagResource) {
+        primaryCategory = transformFlarumTagToCategorySummary(firstNonChildTagResource);
+      } else if (discussionTags.length > 0) {
+        // Fallback 2: very first tag associated if all else fails (e.g. all are child tags)
+        const firstTagResource = findIncludedResource<FlarumTag>(included, 'tags', discussionTags[0].id);
+        if (firstTagResource) {
+             primaryCategory = transformFlarumTagToCategorySummary(firstTagResource);
+        }
+      }
+    }
+  }
 
 
   return {
@@ -203,9 +219,9 @@ function transformFlarumDiscussion(discussion: FlarumDiscussion, included?: Flar
     createdAt: attributes.createdAt,
     postCount: attributes.commentCount + 1,
     viewCount: attributes.viewCount || 0,
-    tags: discussionTags,
+    tags: discussionTags, // All tags associated with the discussion
     firstPost: firstPost,
-    category: primaryCategory,
+    category: primaryCategory, // The determined primary category
     lastPostedAt: attributes.lastPostedAt,
     lastPostedUser: lastPostedUser,
     participantCount: attributes.participantCount,
@@ -230,7 +246,7 @@ export async function fetchCategories(): Promise<Category[]> {
         const includedDiscussion = findIncludedResource<FlarumDiscussion>(response.included, 'discussions', discussionId);
 
         if (includedDiscussion) {
-            let authorName = 'Unknown User'; // Default
+            let authorName = 'Unknown User';
             const lastDiscussionPosterData = includedDiscussion.relationships?.lastPostedUser?.data as FlarumResourceIdentifier || includedDiscussion.relationships?.user?.data as FlarumResourceIdentifier;
 
             if(lastDiscussionPosterData && lastDiscussionPosterData.id) {
@@ -250,7 +266,7 @@ export async function fetchCategories(): Promise<Category[]> {
         } else {
              lastTopic = {
                 id: discussionId, 
-                title: `Last topic in ${tag.attributes.name}`,
+                title: `Last topic in ${tag.attributes.name}`, // Placeholder if discussion details not found
             };
         }
       }
@@ -272,7 +288,7 @@ export async function fetchCategories(): Promise<Category[]> {
 }
 
 export async function fetchCategoryDetailsBySlug(slug: string): Promise<Category | null> {
-  const endpoint = `/tags?filter[slug]=${slug}`;
+  const endpoint = `/tags?filter[slug]=${slug}`; // Removed include for simplicity, can be added back if needed
   const response = await flarumFetch<FlarumApiListResponse<FlarumTag>>(endpoint);
 
   if (!response || !response.data || response.data.length === 0) {
@@ -283,12 +299,16 @@ export async function fetchCategoryDetailsBySlug(slug: string): Promise<Category
   const tag = response.data[0]; 
   let lastTopicDetails;
 
+  // Note: lastPostedDiscussion might not be included here if not requested in the endpoint.
+  // The current endpoint does not include it. If you need it, add `&include=lastPostedDiscussion`
   const lastPostedDiscussionData = tag.relationships?.lastPostedDiscussion?.data as FlarumResourceIdentifier;
   if (lastPostedDiscussionData && lastPostedDiscussionData.id) {
       const discussionId = lastPostedDiscussionData.id;
+      // To get title/author, you'd need to ensure lastPostedDiscussion and its user are included,
+      // or make another fetch. For now, this is simplified.
       lastTopicDetails = {
           id: discussionId,
-          title: "View Last Topic", 
+          title: "View Last Topic", // Generic title as details are not fetched here
       };
   }
 
@@ -319,7 +339,8 @@ export async function fetchDiscussionsByTag(tagSlug: string): Promise<Topic[]> {
 
 
 export async function fetchDiscussionDetails(discussionIdentifier: string): Promise<{ topic: Topic; posts: Post[] } | null> {
-  const endpoint = `/discussions/${discussionIdentifier}?include=posts,user,tags,firstPost,posts.user`; // Added posts.user
+  // Ensure posts.user is included to get authors for posts
+  const endpoint = `/discussions/${discussionIdentifier}?include=posts,posts.user,user,tags,firstPost,firstPost.user`;
   const response = await flarumFetch<FlarumApiSingleResponse<FlarumDiscussion>>(endpoint);
 
   if (!response || !response.data) {
@@ -342,6 +363,8 @@ export async function fetchDiscussionDetails(discussionIdentifier: string): Prom
       }
     });
   } else if (response.included) {
+    // Fallback if relationships.posts.data is not an array (shouldn't happen for discussions with posts)
+    // or if we want to be extra sure to grab all posts linked to this discussion from the 'included' array.
     posts = response.included
       .filter((inc): inc is FlarumPostType =>
         inc.type === 'posts' &&
@@ -351,16 +374,19 @@ export async function fetchDiscussionDetails(discussionIdentifier: string): Prom
       .filter((post): post is Post => post !== undefined);
   }
   
+  // Ensure firstPost is at the beginning of the posts array if it exists
   if (topic.firstPost) {
     const firstPostIndex = posts.findIndex(p => p.id === topic.firstPost?.id);
     if (firstPostIndex > -1) {
       const [fp] = posts.splice(firstPostIndex, 1);
       posts.unshift(fp);
     } else {
+      // If firstPost wasn't in the posts relationship for some reason but was included separately
       posts.unshift(topic.firstPost);
     }
   }
 
+  // Sort posts by creation date (oldest first)
   posts.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
   return { topic, posts };
@@ -406,8 +432,12 @@ export async function submitReplyToDiscussion(discussionId: string, content: str
         return null;
     }
     
+    // Re-transform the post, ensuring the author is the current user.
+    // This is important if Flarum's response for creating a post doesn't include the full user details back.
     const newPost = transformFlarumPost(response.data, response.included);
     if (newPost) {
+        // Ensure the author is correctly set to the current user,
+        // especially if the included data from Flarum API might be minimal for the post author on create.
         if (newPost.author.id === 'unknown' || newPost.author.id !== currentUser.id) {
             newPost.author = currentUser;
         }

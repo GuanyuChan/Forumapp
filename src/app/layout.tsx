@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
@@ -5,8 +6,8 @@ import { Toaster } from "@/components/ui/toaster";
 export const metadata: Metadata = {
   title: 'Zenith Forums',
   description: 'A modern forum application.',
-  // No explicit 'icons' field is set, allowing Next.js to use conventions.
-  // This is to avoid potential issues if a src/app/favicon.ico.mjs file is causing errors.
+  // By not specifying an 'icons' field here, Next.js will use conventional favicon handling.
+  // Ensure any 'src/app/favicon.ico.mjs' is deleted and use a standard 'src/app/favicon.ico' or 'public/favicon.ico' image file.
 };
 
 export default function RootLayout({
