@@ -73,7 +73,7 @@ function transformFlarumUser(userResource?: FlarumUser): User {
   if (!userResource?.attributes || !userResource.id) {
     return {
       id: 'unknown',
-      username: 'Unknown User',
+      username: '未知用户',
       avatarUrl: DEFAULT_AVATAR_PLACEHOLDER,
       joinedAt: new Date().toISOString(),
       bio: '',
@@ -81,7 +81,7 @@ function transformFlarumUser(userResource?: FlarumUser): User {
   }
   return {
     id: userResource.id,
-    username: userResource.attributes.displayName || userResource.attributes.username || 'Unknown User',
+    username: userResource.attributes.displayName || userResource.attributes.username || '未知用户',
     avatarUrl: userResource.attributes.avatarUrl || DEFAULT_AVATAR_PLACEHOLDER,
     joinedAt: userResource.attributes.joinTime || new Date().toISOString(),
     bio: (userResource.attributes as any).bio || '',
@@ -213,7 +213,7 @@ function transformFlarumDiscussion(discussion: FlarumDiscussion, included?: Flar
 
   return {
     id: discussion.id,
-    title: attributes.title || 'Untitled Discussion',
+    title: attributes.title || '无标题讨论',
     slug: attributes.slug,
     author: author,
     createdAt: attributes.createdAt,
@@ -229,7 +229,7 @@ function transformFlarumDiscussion(discussion: FlarumDiscussion, included?: Flar
 }
 
 export async function fetchCategories(): Promise<Category[]> {
-  const response = await flarumFetch<FlarumApiListResponse<FlarumTag>>('/tags?include=lastPostedDiscussion&sort=position');
+  const response = await flarumFetch<FlarumApiListResponse<FlarumTag>>('/tags?include=lastPostedDiscussion,lastPostedDiscussion.user,lastPostedDiscussion.lastPostedUser&sort=position');
 
   if (!response || !response.data) {
     return [];
@@ -246,27 +246,38 @@ export async function fetchCategories(): Promise<Category[]> {
         const includedDiscussion = findIncludedResource<FlarumDiscussion>(response.included, 'discussions', discussionId);
 
         if (includedDiscussion) {
-            let authorName = 'Unknown User';
-            const lastDiscussionPosterData = includedDiscussion.relationships?.lastPostedUser?.data as FlarumResourceIdentifier || includedDiscussion.relationships?.user?.data as FlarumResourceIdentifier;
+            let authorName = '未知用户'; // Default to '未知用户'
+            let userToDisplay: FlarumUser | undefined;
 
-            if(lastDiscussionPosterData && lastDiscussionPosterData.id) {
-                const authorResource = findIncludedResource<FlarumUser>(response.included, 'users', lastDiscussionPosterData.id);
-                if (authorResource) {
-                    const transformedAuthor = transformFlarumUser(authorResource);
-                    authorName = transformedAuthor.username;
+            // Prioritize the user who made the last post in that discussion
+            const lastPosterRelationship = includedDiscussion.relationships?.lastPostedUser?.data as FlarumResourceIdentifier;
+            if (lastPosterRelationship && lastPosterRelationship.id) {
+                userToDisplay = findIncludedResource<FlarumUser>(response.included, 'users', lastPosterRelationship.id);
+            }
+            
+            // If last poster isn't found or not available, fallback to the original author of the discussion
+            if (!userToDisplay) {
+                const originalAuthorRelationship = includedDiscussion.relationships?.user?.data as FlarumResourceIdentifier;
+                if (originalAuthorRelationship && originalAuthorRelationship.id) {
+                    userToDisplay = findIncludedResource<FlarumUser>(response.included, 'users', originalAuthorRelationship.id);
                 }
+            }
+
+            if (userToDisplay) {
+                authorName = transformFlarumUser(userToDisplay).username;
             }
 
             lastTopic = {
                 id: discussionId,
-                title: includedDiscussion.attributes.title || 'Untitled Discussion',
+                title: includedDiscussion.attributes.title || '无标题讨论',
                 authorName: authorName,
                 createdAt: includedDiscussion.attributes.createdAt,
             };
         } else {
              lastTopic = {
                 id: discussionId, 
-                title: `Last topic in ${tag.attributes.name}`, // Placeholder if discussion details not found
+                title: `分类 ${tag.attributes.name} 中的最新主题`, // Placeholder if discussion details not found, translated
+                authorName: '未知用户',
             };
         }
       }
@@ -308,7 +319,7 @@ export async function fetchCategoryDetailsBySlug(slug: string): Promise<Category
       // or make another fetch. For now, this is simplified.
       lastTopicDetails = {
           id: discussionId,
-          title: "View Last Topic", // Generic title as details are not fetched here
+          title: "查看最新主题", // Generic title as details are not fetched here
       };
   }
 
@@ -339,7 +350,6 @@ export async function fetchDiscussionsByTag(tagSlug: string): Promise<Topic[]> {
 
 
 export async function fetchDiscussionDetails(discussionIdentifier: string): Promise<{ topic: Topic; posts: Post[] } | null> {
-  // Simplified include string
   const endpoint = `/discussions/${discussionIdentifier}?include=user,tags,posts,posts.user`;
   const response = await flarumFetch<FlarumApiSingleResponse<FlarumDiscussion>>(endpoint);
 
@@ -363,8 +373,6 @@ export async function fetchDiscussionDetails(discussionIdentifier: string): Prom
       }
     });
   } else if (response.included) {
-    // Fallback if relationships.posts.data is not an array (shouldn't happen for discussions with posts)
-    // or if we want to be extra sure to grab all posts linked to this discussion from the 'included' array.
     posts = response.included
       .filter((inc): inc is FlarumPostType =>
         inc.type === 'posts' &&
@@ -374,26 +382,16 @@ export async function fetchDiscussionDetails(discussionIdentifier: string): Prom
       .filter((post): post is Post => post !== undefined);
   }
   
-  // Ensure firstPost is at the beginning of the posts array if it exists
-  // The transformFlarumDiscussion function already populates topic.firstPost by looking it up
-  // from the included 'posts' resources.
   if (topic.firstPost) {
     const firstPostIndex = posts.findIndex(p => p.id === topic.firstPost?.id);
     if (firstPostIndex > -1) {
-      // If firstPost is found in the posts array, move it to the beginning
       const [fp] = posts.splice(firstPostIndex, 1);
       posts.unshift(fp);
     } else {
-      // If topic.firstPost was populated (e.g. from a direct 'firstPost' include if that was used)
-      // but isn't in the 'posts' relationship array for some reason, ensure it's prepended.
-      // With the current simplified include, topic.firstPost should be one of the posts from the 'posts' include.
-      // This case might be less likely now but kept for robustness.
       posts.unshift(topic.firstPost);
     }
   }
 
-
-  // Sort posts by creation date (oldest first)
   posts.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
   return { topic, posts };
@@ -439,12 +437,8 @@ export async function submitReplyToDiscussion(discussionId: string, content: str
         return null;
     }
     
-    // Re-transform the post, ensuring the author is the current user.
-    // This is important if Flarum's response for creating a post doesn't include the full user details back.
     const newPost = transformFlarumPost(response.data, response.included);
     if (newPost) {
-        // Ensure the author is correctly set to the current user,
-        // especially if the included data from Flarum API might be minimal for the post author on create.
         if (newPost.author.id === 'unknown' || newPost.author.id !== currentUser.id) {
             newPost.author = currentUser;
         }
