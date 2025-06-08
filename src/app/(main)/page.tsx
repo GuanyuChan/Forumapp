@@ -26,7 +26,7 @@ export default async function HomePage() {
 
       <section className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {categories.length > 0 ? categories.map((category: Category) => (
-          <Link key={category.id} href={`/category/${category.slug}`} className="block">
+          <Link key={category.id} href={`/t/${category.slug}`} className="block">
             <div className="p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 bg-card h-full flex flex-col justify-between">
               <div>
                 <h3 className="text-xl font-semibold text-primary mb-2" style={category.color ? { color: category.color } : {}}>

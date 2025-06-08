@@ -37,7 +37,7 @@ export function TopicListItem({ topic }: TopicListItemProps) {
             {formatDistanceToNow(new Date(topic.createdAt), { addSuffix: true })}
           </span>
           {categoryToDisplay && (
-            <Link href={`/category/${categoryToDisplay.slug}`} className="text-xs text-accent hover:underline flex items-center">
+            <Link href={`/t/${categoryToDisplay.slug}`} className="text-xs text-accent hover:underline flex items-center">
                {categoryToDisplay.icon && <i className={`${categoryToDisplay.icon} mr-1.5 text-base`} style={categoryToDisplay.color ? { color: categoryToDisplay.color } : {}}></i>}
               <span style={categoryToDisplay.color ? { color: categoryToDisplay.color } : {}}>#{categoryToDisplay.name}</span>
             </Link>
@@ -62,7 +62,7 @@ export function TopicListItem({ topic }: TopicListItemProps) {
           <div className="flex items-center space-x-1 flex-wrap gap-1">
             <Tag className="h-4 w-4 text-muted-foreground" />
             {topic.tags.filter(t => t.id !== categoryToDisplay?.id).slice(0, 2).map(tag => (
-              <Link key={tag.id} href={`/category/${tag.slug}`}>
+              <Link key={tag.id} href={`/t/${tag.slug}`}>
                 <span 
                     className="px-2 py-0.5 bg-secondary text-secondary-foreground rounded-full text-xs hover:bg-secondary/80"
                     style={tag.color ? { backgroundColor: tag.color, color: 'white' } : {}} // Basic contrast, might need adjustment

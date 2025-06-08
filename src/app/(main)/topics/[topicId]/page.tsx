@@ -2,7 +2,7 @@
 'use client';
 import { useParams, notFound as nextNotFound } from 'next/navigation'; // Renamed to avoid conflict
 import { useEffect, useState } from 'react';
-import type { Topic, Post as PostType } from '@/lib/types';
+import type { Topic, Post as PostType, User } from '@/lib/types';
 // import { getPlaceholderTopicById, placeholderUser } from '@/lib/placeholder-data'; // TODO: Replace with API call
 import { fetchDiscussionDetails, submitReplyToDiscussion } from '@/services/flarum'; // Assuming these will be created
 import { placeholderUser } from '@/lib/placeholder-data'; // Keep for currentUserId simulation
@@ -154,7 +154,7 @@ export default function TopicPage() {
            {topic.category && (
             <>
               <span>&bull;</span>
-              <Link href={`/category/${topic.category.slug}`} className="hover:underline flex items-center" style={topic.category.color ? { color: topic.category.color } : {}}>
+              <Link href={`/t/${topic.category.slug}`} className="hover:underline flex items-center" style={topic.category.color ? { color: topic.category.color } : {}}>
                 {topic.category.icon && <i className={`${topic.category.icon} mr-1.5`}></i>}
                 <span>{topic.category.name}</span>
               </Link>
@@ -165,7 +165,7 @@ export default function TopicPage() {
         {topic.tags && topic.tags.filter(t => t.id !== topic.category?.id).length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
                 {topic.tags.filter(t => t.id !== topic.category?.id).map(tag => (
-                  <Link key={tag.id} href={`/category/${tag.slug}`}>
+                  <Link key={tag.id} href={`/t/${tag.slug}`}>
                     <span 
                         className="px-2.5 py-1 bg-secondary text-secondary-foreground rounded-full text-xs font-medium hover:bg-secondary/80 transition-colors"
                         style={tag.color ? { backgroundColor: tag.color, color: 'white'} : {}} // Basic styling for colored tags
