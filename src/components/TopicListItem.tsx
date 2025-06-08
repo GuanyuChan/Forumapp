@@ -10,9 +10,14 @@ interface TopicListItemProps {
   topic: Topic;
 }
 
+const DEFAULT_AVATAR_PLACEHOLDER = 'https://placehold.co/100x100.png';
+
 export function TopicListItem({ topic }: TopicListItemProps) {
   const categoryToDisplay = topic.category || (topic.tags && topic.tags.length > 0 ? topic.tags[0] : undefined);
-  const authorDisplayName = topic.author?.username || 'Unknown User';
+  
+  // topic.author is now guaranteed to be a User object by transformFlarumUser
+  const authorDisplayName = topic.author.username;
+  const authorAvatarUrl = topic.author.avatarUrl;
   const authorInitials = authorDisplayName.substring(0, 2).toUpperCase();
 
   return (
@@ -26,9 +31,13 @@ export function TopicListItem({ topic }: TopicListItemProps) {
         <CardDescription className="text-xs text-muted-foreground flex items-center flex-wrap gap-x-3 gap-y-1 pt-1">
           <span className="flex items-center">
             <Avatar className="h-5 w-5 mr-1.5">
-              <AvatarImage src={topic.author?.avatarUrl} alt={authorDisplayName} data-ai-hint="user avatar small"/>
-              <AvatarFallback className="text-xs font-semibold">
-                 {authorDisplayName !== 'Unknown User' && topic.author?.avatarUrl ? authorInitials : <UserCircle2 className="h-5 w-5 text-muted-foreground" />}
+              <AvatarImage src={authorAvatarUrl === DEFAULT_AVATAR_PLACEHOLDER ? undefined : authorAvatarUrl} alt={authorDisplayName} data-ai-hint="user avatar small"/>
+              <AvatarFallback className="flex items-center justify-center">
+                {authorDisplayName !== 'Unknown User' && authorAvatarUrl !== DEFAULT_AVATAR_PLACEHOLDER ? (
+                  <span className="text-xs font-semibold">{authorInitials}</span>
+                ) : (
+                  <UserCircle2 className="h-full w-full text-muted-foreground" />
+                )}
               </AvatarFallback>
             </Avatar>
             {authorDisplayName}

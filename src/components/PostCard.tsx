@@ -28,6 +28,8 @@ interface PostCardProps {
   currentUserId?: string;
 }
 
+const DEFAULT_AVATAR_PLACEHOLDER = 'https://placehold.co/100x100.png';
+
 export function PostCard({ post, onReply, topicId, level = 0, currentUserId }: PostCardProps) {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const { toast } = useToast();
@@ -51,7 +53,9 @@ export function PostCard({ post, onReply, topicId, level = 0, currentUserId }: P
   };
 
   const isOwnPost = currentUserId && post.author.id === currentUserId;
-  const authorDisplayName = post.author?.username || 'Unknown User';
+  // post.author is now guaranteed to be a User object by transformFlarumUser
+  const authorDisplayName = post.author.username;
+  const authorAvatarUrl = post.author.avatarUrl;
   const authorInitials = authorDisplayName.substring(0, 2).toUpperCase();
 
 
@@ -60,9 +64,13 @@ export function PostCard({ post, onReply, topicId, level = 0, currentUserId }: P
       <CardHeader className="flex flex-row items-start justify-between p-4 pb-2">
         <div className="flex items-center space-x-3">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={post.author?.avatarUrl} alt={authorDisplayName} data-ai-hint="user avatar" />
-            <AvatarFallback className="text-sm font-semibold">
-              {authorDisplayName !== 'Unknown User' && post.author?.avatarUrl ? authorInitials : <UserCircle2 className="h-10 w-10 text-muted-foreground" />}
+            <AvatarImage src={authorAvatarUrl === DEFAULT_AVATAR_PLACEHOLDER ? undefined : authorAvatarUrl} alt={authorDisplayName} data-ai-hint="user avatar" />
+            <AvatarFallback className="flex items-center justify-center">
+              {authorDisplayName !== 'Unknown User' && authorAvatarUrl !== DEFAULT_AVATAR_PLACEHOLDER ? (
+                <span className="text-sm font-semibold">{authorInitials}</span>
+              ) : (
+                <UserCircle2 className="h-full w-full text-muted-foreground" />
+              )}
             </AvatarFallback>
           </Avatar>
           <div>
@@ -92,6 +100,9 @@ export function PostCard({ post, onReply, topicId, level = 0, currentUserId }: P
         </DropdownMenu>
       </CardHeader>
       <CardContent className="p-4 pt-2 text-foreground/90">
+        {/* Using dangerouslySetInnerHTML for Flarum content is risky without proper sanitization.
+            For now, assuming 'post.content' is plain text due to stripping in transformFlarumPost.
+            If HTML content is intended, ensure it's sanitized on the server or use a safe HTML renderer. */}
         <p>{post.content}</p>
         {post.isFlagged && (
             <div className="mt-2 p-2 border border-destructive/50 bg-destructive/10 rounded-md text-destructive text-sm">
