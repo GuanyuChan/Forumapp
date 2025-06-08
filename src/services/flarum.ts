@@ -339,8 +339,8 @@ export async function fetchDiscussionsByTag(tagSlug: string): Promise<Topic[]> {
 
 
 export async function fetchDiscussionDetails(discussionIdentifier: string): Promise<{ topic: Topic; posts: Post[] } | null> {
-  // Ensure posts.user is included to get authors for posts
-  const endpoint = `/discussions/${discussionIdentifier}?include=posts,posts.user,user,tags,firstPost,firstPost.user`;
+  // Simplified include string
+  const endpoint = `/discussions/${discussionIdentifier}?include=user,tags,posts,posts.user`;
   const response = await flarumFetch<FlarumApiSingleResponse<FlarumDiscussion>>(endpoint);
 
   if (!response || !response.data) {
@@ -375,16 +375,23 @@ export async function fetchDiscussionDetails(discussionIdentifier: string): Prom
   }
   
   // Ensure firstPost is at the beginning of the posts array if it exists
+  // The transformFlarumDiscussion function already populates topic.firstPost by looking it up
+  // from the included 'posts' resources.
   if (topic.firstPost) {
     const firstPostIndex = posts.findIndex(p => p.id === topic.firstPost?.id);
     if (firstPostIndex > -1) {
+      // If firstPost is found in the posts array, move it to the beginning
       const [fp] = posts.splice(firstPostIndex, 1);
       posts.unshift(fp);
     } else {
-      // If firstPost wasn't in the posts relationship for some reason but was included separately
+      // If topic.firstPost was populated (e.g. from a direct 'firstPost' include if that was used)
+      // but isn't in the 'posts' relationship array for some reason, ensure it's prepended.
+      // With the current simplified include, topic.firstPost should be one of the posts from the 'posts' include.
+      // This case might be less likely now but kept for robustness.
       posts.unshift(topic.firstPost);
     }
   }
+
 
   // Sort posts by creation date (oldest first)
   posts.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
@@ -445,3 +452,4 @@ export async function submitReplyToDiscussion(discussionId: string, content: str
     }
     return null;
 }
+
