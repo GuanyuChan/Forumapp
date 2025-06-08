@@ -82,7 +82,7 @@ export default async function TopicPage({ params }: { params: { topicId: string 
               <Avatar className="h-6 w-6 mr-1.5">
                 <AvatarImage src={topic.author.avatarUrl} alt={authorDisplayName} data-ai-hint="user avatar small"/>
                 <AvatarFallback className="text-xs font-semibold">
-                   {topic.author.username !== 'Unknown User' && topic.author.avatarUrl ? authorInitials : <UserCircle2 className="h-6 w-6" />}
+                   {authorDisplayName !== 'Unknown User' && topic.author.avatarUrl ? authorInitials : <UserCircle2 className="h-6 w-6" />}
                 </AvatarFallback>
               </Avatar>
               <span>{authorDisplayName}</span>

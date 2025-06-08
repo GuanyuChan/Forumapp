@@ -28,7 +28,7 @@ export function TopicListItem({ topic }: TopicListItemProps) {
             <Avatar className="h-5 w-5 mr-1.5">
               <AvatarImage src={topic.author?.avatarUrl} alt={authorDisplayName} data-ai-hint="user avatar small"/>
               <AvatarFallback className="text-xs font-semibold">
-                 {topic.author?.username !== 'Unknown User' && topic.author?.avatarUrl ? authorInitials : <UserCircle2 className="h-5 w-5 text-muted-foreground" />}
+                 {authorDisplayName !== 'Unknown User' && topic.author?.avatarUrl ? authorInitials : <UserCircle2 className="h-5 w-5 text-muted-foreground" />}
               </AvatarFallback>
             </Avatar>
             {authorDisplayName}

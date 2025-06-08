@@ -62,7 +62,7 @@ export function PostCard({ post, onReply, topicId, level = 0, currentUserId }: P
           <Avatar className="h-10 w-10">
             <AvatarImage src={post.author?.avatarUrl} alt={authorDisplayName} data-ai-hint="user avatar" />
             <AvatarFallback className="text-sm font-semibold">
-              {post.author?.username !== 'Unknown User' && post.author?.avatarUrl ? authorInitials : <UserCircle2 className="h-10 w-10 text-muted-foreground" />}
+              {authorDisplayName !== 'Unknown User' && post.author?.avatarUrl ? authorInitials : <UserCircle2 className="h-10 w-10 text-muted-foreground" />}
             </AvatarFallback>
           </Avatar>
           <div>
