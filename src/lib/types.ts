@@ -1,3 +1,4 @@
+
 export interface User {
   id: string;
   username: string;
@@ -35,8 +36,16 @@ export interface CategorySummary {
   slug: string;
 }
 export interface Category extends CategorySummary {
-  description: string;
+  description: string | null; // Flarum descriptions can be null
   topicCount: number;
-  postCount: number;
-  lastTopic?: Pick<Topic, 'id' | 'title' | 'createdAt' | 'author'>;
+  postCount?: number; // Not directly available from Flarum's /api/tags, make optional
+  // lastTopic details from Flarum's /api/tags might require 'include' or be complex.
+  // Simplified for now.
+  lastTopic?: {
+    title: string;
+    authorName?: string; // Username of the author of the last post/topic
+    // Full date might require parsing lastPostedAt from tag or lastPostedDiscussion.createdAt
+  };
+  color?: string; // Flarum tags have a color attribute
+  icon?: string; // Flarum tags can have an icon
 }
