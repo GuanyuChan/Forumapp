@@ -7,10 +7,12 @@ export const metadata: Metadata = {
   title: 'Zenith Forums',
   description: 'A modern forum application.',
   // FAVICON GUIDELINES:
-  // 1. CRITICAL: Ensure any 'src/app/favicon.ico.mjs' file is DELETED. This non-standard file causes build issues.
-  // 2. Place a standard 'favicon.ico' (actual image file, NOT .mjs) in 'src/app/' OR 'public/'.
-  // 3. By NOT specifying an 'icons' field in this metadata object, Next.js will automatically use the conventional favicon.ico.
-  // 4. If build errors persist (like "Cannot read properties of null"), DELETE the .next folder and RESTART the dev server.
+  // 1. URGENT & CRITICAL: Ensure any 'src/app/favicon.ico.mjs' file is PERMANENTLY DELETED. This non-standard file is the likely cause of persistent build errors.
+  // 2. STANDARD FAVICON: Place a regular 'favicon.ico' (an actual image file, NOT .mjs) in 'src/app/' OR in the 'public/' directory.
+  // 3. CONVENTIONAL METADATA: By NOT defining an 'icons' field in this metadata object, Next.js will automatically find and use a conventional 'favicon.ico'.
+  // 4. RESOLVE PERSISTENT ERRORS: If "module factory not available", "Cannot read properties of null (reading 'use')", or similar build errors continue, you ABSOLUTELY MUST:
+  //    a) DELETE the entire '.next' folder from your project root.
+  //    b) Restart your dev server. This clears corrupted build cache.
 };
 
 export default function RootLayout({
