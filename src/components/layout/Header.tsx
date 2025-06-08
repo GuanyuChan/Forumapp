@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Search, User, Bell, HomeIcon, MessageSquarePlusIcon, ShieldCheckIcon } from 'lucide-react';
+import { Menu, Search, Bell, HomeIcon, MessageSquarePlusIcon } from 'lucide-react';
 import { ZenithForumsLogo } from '@/components/icons/ZenithForumsLogo';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -12,8 +12,8 @@ const navItems = [
   { href: '/', label: 'Home', icon: HomeIcon },
   { href: '/search', label: 'Search', icon: Search },
   { href: '/new-topic', label: 'New Topic', icon: MessageSquarePlusIcon },
-  { href: '/moderation', label: 'Moderation', icon: ShieldCheckIcon },
-  { href: '/profile', label: 'Profile', icon: User },
+  // { href: '/moderation', label: 'Moderation', icon: ShieldCheckIcon }, // Removed
+  // { href: '/profile', label: 'Profile', icon: User }, // Removed
 ];
 
 export function Header() {
@@ -70,9 +70,9 @@ export function Header() {
             <Link href="/login" passHref>
               <Button variant="outline" size="sm">Log In</Button>
             </Link>
-            <Link href="/signup" passHref>
+            {/* <Link href="/signup" passHref>
               <Button variant="default" size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90">Sign Up</Button>
-            </Link>
+            </Link> */}
           </div>
 
           <div className="md:hidden">
@@ -91,9 +91,9 @@ export function Header() {
                    <Link href="/login" passHref>
                       <Button variant="outline" className="w-full">Log In</Button>
                     </Link>
-                    <Link href="/signup" passHref>
+                    {/* <Link href="/signup" passHref>
                       <Button variant="default" className="w-full bg-accent text-accent-foreground hover:bg-accent/90">Sign Up</Button>
-                    </Link>
+                    </Link> */}
                 </div>
               </SheetContent>
             </Sheet>
