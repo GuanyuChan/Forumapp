@@ -1,6 +1,5 @@
 
 import Link from 'next/link';
-// import Image from 'next/image'; // Not used currently
 import type { Topic } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -13,6 +12,8 @@ interface TopicListItemProps {
 
 export function TopicListItem({ topic }: TopicListItemProps) {
   const categoryToDisplay = topic.category || (topic.tags && topic.tags.length > 0 ? topic.tags[0] : undefined);
+  const authorDisplayName = topic.author?.username || 'Unknown User';
+  const authorInitials = authorDisplayName.substring(0, 2).toUpperCase();
 
   return (
     <Card className="mb-4 shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out">
@@ -25,12 +26,12 @@ export function TopicListItem({ topic }: TopicListItemProps) {
         <CardDescription className="text-xs text-muted-foreground flex items-center flex-wrap gap-x-3 gap-y-1 pt-1">
           <span className="flex items-center">
             <Avatar className="h-5 w-5 mr-1.5">
-              <AvatarImage src={topic.author?.avatarUrl} alt={topic.author?.username || 'User'} data-ai-hint="user avatar small"/>
-              <AvatarFallback>
-                <UserCircle2 className="h-5 w-5 text-muted-foreground" />
+              <AvatarImage src={topic.author?.avatarUrl} alt={authorDisplayName} data-ai-hint="user avatar small"/>
+              <AvatarFallback className="text-xs font-semibold">
+                 {topic.author?.avatarUrl ? authorInitials : <UserCircle2 className="h-5 w-5 text-muted-foreground" />}
               </AvatarFallback>
             </Avatar>
-            {topic.author?.username || 'Unknown User'}
+            {authorDisplayName}
           </span>
           <span className="flex items-center">
             <Clock className="mr-1 h-3 w-3" />
@@ -65,7 +66,7 @@ export function TopicListItem({ topic }: TopicListItemProps) {
               <Link key={tag.id} href={`/t/${tag.slug}`}>
                 <span 
                     className="px-2 py-0.5 bg-secondary text-secondary-foreground rounded-full text-xs hover:bg-secondary/80"
-                    style={tag.color ? { backgroundColor: tag.color, color: 'white' } : {}} // Basic contrast, might need adjustment
+                    style={tag.color ? { backgroundColor: tag.color, color: 'white' } : {}}
                 >
                     {tag.name}
                 </span>

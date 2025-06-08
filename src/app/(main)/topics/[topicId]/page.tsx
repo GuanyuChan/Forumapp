@@ -2,10 +2,9 @@
 import { notFound as nextNotFound } from 'next/navigation';
 import type { Topic, Post as PostType, User } from '@/lib/types';
 import { fetchDiscussionDetails, submitReplyToDiscussion } from '@/services/flarum';
-import { placeholderUser } from '@/lib/placeholder-data'; // Assuming this is for current user mock
+import { placeholderUser } from '@/lib/placeholder-data'; 
 
 import { PostCard } from '@/components/PostCard';
-// CreatePostForm is now used within RootReplyFormWrapper for the main reply
 import { RootReplyFormWrapper } from '@/components/RootReplyFormWrapper';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserCircle2, Clock } from 'lucide-react';
@@ -13,13 +12,10 @@ import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { revalidatePath } from 'next/cache';
 
-// Helper function to simulate fetching current user details - This should ideally come from server session.
 const getCurrentUser = (): User => {
-  // In a real app, this would come from an authentication system.
   return placeholderUser;
 };
 
-// SERVER ACTION for handling replies
 export async function handleReplyAction(
   topicId: string,
   content: string,
@@ -32,13 +28,24 @@ export async function handleReplyAction(
   }
 
   const currentUserForAction = getCurrentUser();
+  if (!currentUserForAction || !currentUserForAction.id) {
+    console.error('Server Action: Current user ID is missing. Cannot submit reply.');
+    return { success: false, error: 'Authentication error. Could not determine current user.' };
+  }
 
   const newPost = await submitReplyToDiscussion(topicId, content, currentUserForAction);
 
   if (newPost) {
     revalidatePath(`/topics/${topicId}`);
-    // Consider revalidating category/tag pages if they show reply counts or last post info
-    // For example, if topic.category.slug exists: revalidatePath(`/t/${topic.category.slug}`);
+    // Revalidate tag pages if the topic has tags
+    if (newPost.author?.id) { // Ensure author exists to prevent error on newPost creation
+        const fetchedTopicData = await fetchDiscussionDetails(topicId); // Renamed to avoid conflict
+        fetchedTopicData?.topic.tags?.forEach(tag => {
+            if (tag.slug) {
+                revalidatePath(`/t/${tag.slug}`);
+            }
+        });
+    }
     return { success: true, post: newPost };
   } else {
     return { success: false, error: "Failed to post reply." };
@@ -48,7 +55,7 @@ export async function handleReplyAction(
 
 export default async function TopicPage({ params }: { params: { topicId: string } }) {
   const topicIdFromParam = params.topicId;
-  const currentUser = getCurrentUser();
+  const currentUser = getCurrentUser(); // This should be a server-side way to get user
 
   const fetchedTopicAndPosts = await fetchDiscussionDetails(topicIdFromParam);
 
@@ -57,8 +64,8 @@ export default async function TopicPage({ params }: { params: { topicId: string 
   }
 
   const { topic, posts: initialPosts } = fetchedTopicAndPosts;
-
-  // The direct handleRootReplySubmit is removed, RootReplyFormWrapper handles this.
+  const authorDisplayName = topic.author?.username || 'Unknown User';
+  const authorInitials = authorDisplayName.substring(0, 2).toUpperCase();
 
   return (
     <div className="space-y-6">
@@ -70,10 +77,12 @@ export default async function TopicPage({ params }: { params: { topicId: string 
           {topic.author && (
             <Link href={`/profile/${topic.author.username}`} className="flex items-center hover:underline">
               <Avatar className="h-6 w-6 mr-1.5">
-                <AvatarImage src={topic.author.avatarUrl} alt={topic.author.username} data-ai-hint="user avatar small"/>
-                <AvatarFallback><UserCircle2 className="h-6 w-6" /></AvatarFallback>
+                <AvatarImage src={topic.author.avatarUrl} alt={authorDisplayName} data-ai-hint="user avatar small"/>
+                <AvatarFallback className="text-xs font-semibold">
+                   {topic.author.avatarUrl ? authorInitials : <UserCircle2 className="h-6 w-6" />}
+                </AvatarFallback>
               </Avatar>
-              <span>{topic.author.username}</span>
+              <span>{authorDisplayName}</span>
             </Link>
           )}
           <span className="flex items-center">
