@@ -44,9 +44,6 @@ async function flarumFetch<T>(endpoint: string, options?: RequestInit): Promise<
     const response = await fetch(url, {
       ...options,
       headers: headers,
-      // For Server Actions and mutations, revalidation is better handled by revalidatePath/Tag
-      // For GET requests, cache control can be set here or via route segment configs.
-      // next: { revalidate: 300 } // Example: revalidate GETs every 5 minutes
     });
 
     if (!response.ok) {
@@ -183,7 +180,7 @@ function transformFlarumDiscussion(discussion: FlarumDiscussion, included?: Flar
 }
 
 export async function fetchCategories(): Promise<Category[]> {
-  const response = await flarumFetch<FlarumApiListResponse<FlarumTag>>('/tags?include=lastPostedDiscussion,lastPostedDiscussion.user&sort=position');
+  const response = await flarumFetch<FlarumApiListResponse<FlarumTag>>('/tags?include=lastPostedDiscussion&sort=position');
 
   if (!response || !response.data) {
     return [];
@@ -238,7 +235,7 @@ export async function fetchCategories(): Promise<Category[]> {
 
 export async function fetchCategoryDetailsBySlug(slug: string): Promise<Category | null> {
   // Simplified include. We might need to adjust based on Flarum version/extensions
-  const endpoint = `/tags?filter[slug]=${slug}&include=lastPostedDiscussion,lastPostedDiscussion.user`;
+  const endpoint = `/tags?filter[slug]=${slug}&include=parent,lastPostedDiscussion`;
   const response = await flarumFetch<FlarumApiListResponse<FlarumTag>>(endpoint); // API returns a list even with slug filter
 
   if (!response || !response.data || response.data.length === 0) {
@@ -303,7 +300,7 @@ export async function fetchDiscussionsByTag(tagSlug: string): Promise<Topic[]> {
 }
 
 export async function fetchDiscussionDetails(discussionIdentifier: string): Promise<{ topic: Topic; posts: Post[] } | null> {
-  const endpoint = `/discussions/${discussionIdentifier}?include=posts,user,tags,firstPost,posts.user`;
+  const endpoint = `/discussions/${discussionIdentifier}?include=posts,user,tags,firstPost`;
   const response = await flarumFetch<FlarumApiSingleResponse<FlarumDiscussion>>(endpoint);
 
   if (!response || !response.data) {
@@ -376,10 +373,7 @@ export async function submitReplyToDiscussion(discussionId: string, content: str
                         id: discussionId,
                     },
                 },
-                 // Flarum usually infers the user from the API key/session.
-                 // If submitting on behalf of a user via admin key, you might need user relationship:
-                 // user: { data: { type: 'users', id: currentUser.id } }
-                 // But this is often not needed if the key belongs to the user or implies it.
+                 user: { data: { type: 'users', id: currentUser.id } }
             },
         },
     };
@@ -406,3 +400,4 @@ export async function submitReplyToDiscussion(discussionId: string, content: str
     }
     return null;
 }
+
