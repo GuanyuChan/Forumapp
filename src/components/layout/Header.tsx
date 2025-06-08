@@ -3,17 +3,15 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Search, Bell, HomeIcon, MessageSquarePlusIcon } from 'lucide-react';
+import { Menu, Bell, HomeIcon } from 'lucide-react'; // Removed Search, MessageSquarePlusIcon
 import { ZenithForumsLogo } from '@/components/icons/ZenithForumsLogo';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/', label: 'Home', icon: HomeIcon },
-  { href: '/search', label: 'Search', icon: Search },
-  { href: '/new-topic', label: 'New Topic', icon: MessageSquarePlusIcon },
-  // { href: '/moderation', label: 'Moderation', icon: ShieldCheckIcon }, // Removed
-  // { href: '/profile', label: 'Profile', icon: User }, // Removed
+  // { href: '/search', label: 'Search', icon: Search }, // Removed
+  // { href: '/new-topic', label: 'New Topic', icon: MessageSquarePlusIcon }, // Removed
 ];
 
 export function Header() {
@@ -55,25 +53,20 @@ export function Header() {
           <ZenithForumsLogo className="h-8 w-auto" />
         </Link>
 
-        <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
-          {navItems.map((item) => (
-            <NavLink key={item.href} {...item} />
-          ))}
-        </nav>
+        {navItems.length > 0 && (
+          <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
+            {navItems.map((item) => (
+              <NavLink key={item.href} {...item} />
+            ))}
+          </nav>
+        )}
 
         <div className="flex items-center gap-2 md:gap-3">
           <Button variant="ghost" size="icon" aria-label="Notifications">
             <Bell className="h-5 w-5" />
           </Button>
           
-          <div className="hidden md:flex items-center gap-2">
-            <Link href="/login" passHref>
-              <Button variant="outline" size="sm">Log In</Button>
-            </Link>
-            {/* <Link href="/signup" passHref>
-              <Button variant="default" size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90">Sign Up</Button>
-            </Link> */}
-          </div>
+          {/* Removed Log In and Sign Up buttons block for desktop */}
 
           <div className="md:hidden">
             <Sheet>
@@ -87,13 +80,7 @@ export function Header() {
                   {navItems.map((item) => (
                      <MobileNavLink key={item.href} {...item} />
                   ))}
-                  <hr className="my-3" />
-                   <Link href="/login" passHref>
-                      <Button variant="outline" className="w-full">Log In</Button>
-                    </Link>
-                    {/* <Link href="/signup" passHref>
-                      <Button variant="default" className="w-full bg-accent text-accent-foreground hover:bg-accent/90">Sign Up</Button>
-                    </Link> */}
+                  {/* Removed Log In and Sign Up buttons block for mobile */}
                 </div>
               </SheetContent>
             </Sheet>
@@ -103,3 +90,4 @@ export function Header() {
     </header>
   );
 }
+
