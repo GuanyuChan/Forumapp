@@ -229,7 +229,8 @@ function transformFlarumDiscussion(discussion: FlarumDiscussion, included?: Flar
 }
 
 export async function fetchCategories(): Promise<Category[]> {
-  const response = await flarumFetch<FlarumApiListResponse<FlarumTag>>('/tags?include=lastPostedDiscussion,lastPostedDiscussion.user&sort=position');
+  // Simplified include to just 'lastPostedDiscussion'
+  const response = await flarumFetch<FlarumApiListResponse<FlarumTag>>('/tags?include=lastPostedDiscussion&sort=position');
 
   if (!response || !response.data) {
     return [];
@@ -249,21 +250,14 @@ export async function fetchCategories(): Promise<Category[]> {
             let authorName = '未知用户'; 
             let userToDisplay: FlarumUser | undefined;
 
-            // Try to get the user who made the last post in that discussion
-            // This data might not be available if 'lastPostedDiscussion.lastPostedUser' was the problematic include
-            const lastPosterRelationship = includedDiscussion.relationships?.lastPostedUser?.data as FlarumResourceIdentifier;
-            if (lastPosterRelationship && lastPosterRelationship.id) {
-                userToDisplay = findIncludedResource<FlarumUser>(response.included, 'users', lastPosterRelationship.id);
+            // Attempt to get original author of the discussion, as lastPostedUser might not be directly included now
+            const originalAuthorRelationship = includedDiscussion.relationships?.user?.data as FlarumResourceIdentifier;
+            if (originalAuthorRelationship && originalAuthorRelationship.id) {
+                // Try to find this user in the *general* included data.
+                // This is less reliable as the user might not be included if not directly requested for THIS tag context.
+                userToDisplay = findIncludedResource<FlarumUser>(response.included, 'users', originalAuthorRelationship.id);
             }
             
-            // If last poster isn't found (or their data wasn't included), fallback to the original author of the discussion
-            if (!userToDisplay) {
-                const originalAuthorRelationship = includedDiscussion.relationships?.user?.data as FlarumResourceIdentifier;
-                if (originalAuthorRelationship && originalAuthorRelationship.id) {
-                    userToDisplay = findIncludedResource<FlarumUser>(response.included, 'users', originalAuthorRelationship.id);
-                }
-            }
-
             if (userToDisplay) {
                 authorName = transformFlarumUser(userToDisplay).username;
             }
@@ -300,7 +294,7 @@ export async function fetchCategories(): Promise<Category[]> {
 }
 
 export async function fetchCategoryDetailsBySlug(slug: string): Promise<Category | null> {
-  const endpoint = `/tags?filter[slug]=${slug}`; 
+  const endpoint = `/tags?filter[slug]=${slug}&include=lastPostedDiscussion`; // Simplified include here too for consistency
   const response = await flarumFetch<FlarumApiListResponse<FlarumTag>>(endpoint);
 
   if (!response || !response.data || response.data.length === 0) {
@@ -314,9 +308,14 @@ export async function fetchCategoryDetailsBySlug(slug: string): Promise<Category
   const lastPostedDiscussionData = tag.relationships?.lastPostedDiscussion?.data as FlarumResourceIdentifier;
   if (lastPostedDiscussionData && lastPostedDiscussionData.id) {
       const discussionId = lastPostedDiscussionData.id;
+      const includedDiscussion = findIncludedResource<FlarumDiscussion>(response.included, 'discussions', discussionId);
+      let title = "查看最新主题";
+      if (includedDiscussion) {
+          title = includedDiscussion.attributes.title || title;
+      }
       lastTopicDetails = {
           id: discussionId,
-          title: "查看最新主题", 
+          title: title, 
       };
   }
 
@@ -347,7 +346,7 @@ export async function fetchDiscussionsByTag(tagSlug: string): Promise<Topic[]> {
 
 
 export async function fetchDiscussionDetails(discussionIdentifier: string): Promise<{ topic: Topic; posts: Post[] } | null> {
-  // Simplified include from previous step: user,tags,posts,posts.user
+  // The include string for fetching a single discussion can be more comprehensive
   const endpoint = `/discussions/${discussionIdentifier}?include=user,tags,posts,posts.user`;
   const response = await flarumFetch<FlarumApiSingleResponse<FlarumDiscussion>>(endpoint);
 
