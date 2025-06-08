@@ -88,20 +88,19 @@ export function TopicListItem({ topic, currentCategoryPageSlug }: TopicListItemP
         {/* Display other tags (secondary tags) */}
         {topic.tags && topic.tags.filter(t => t.id !== categoryToDisplay?.id).length > 0 && (
             <div className="flex items-center space-x-1 flex-wrap gap-1">
-                {/* Optional: Add a generic tag icon if desired before the list of secondary tags */}
-                {/* <Tag className="h-4 w-4 text-muted-foreground" /> */}
-                {topic.tags.filter(t => t.id !== categoryToDisplay?.id).slice(0, 2).map(tag => (
-                  <Link key={tag.id} href={`/t/${tag.slug}`}>
+                {topic.tags.filter(t => t.id !== categoryToDisplay?.id).slice(0, 2).map(tagObject => (
+                  <Link key={tagObject.id} href={`/t/${tagObject.slug}`}>
                     <span
-                        className="px-2 py-0.5 bg-secondary text-secondary-foreground rounded-full text-xs hover:bg-secondary/80"
-                        style={tag.color ? { backgroundColor: tag.color, color: 'white' } : {}}
+                        className="inline-flex items-center px-2 py-0.5 bg-secondary text-secondary-foreground rounded-full text-xs hover:bg-secondary/80 transition-colors"
+                        style={tagObject.color ? { backgroundColor: tagObject.color, color: 'white' } : {}}
                     >
-                        {tag.name}
+                        <Tag className="h-3 w-3 mr-1" />
+                        {tagObject.name}
                     </span>
                   </Link>
                 ))}
                 {topic.tags.filter(t => t.id !== categoryToDisplay?.id).length > 2 && (
-                    <span className="px-2 py-0.5 bg-secondary text-secondary-foreground rounded-full text-xs">
+                    <span className="inline-flex items-center px-2 py-0.5 bg-secondary text-secondary-foreground rounded-full text-xs">
                         +{topic.tags.filter(t => t.id !== categoryToDisplay?.id).length - 2} more
                     </span>
                 )}
