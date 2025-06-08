@@ -28,7 +28,7 @@ export function TopicListItem({ topic }: TopicListItemProps) {
             <Avatar className="h-5 w-5 mr-1.5">
               <AvatarImage src={topic.author?.avatarUrl} alt={authorDisplayName} data-ai-hint="user avatar small"/>
               <AvatarFallback className="text-xs font-semibold">
-                 {topic.author?.avatarUrl ? authorInitials : <UserCircle2 className="h-5 w-5 text-muted-foreground" />}
+                 {topic.author?.username !== 'Unknown User' && topic.author?.avatarUrl ? authorInitials : <UserCircle2 className="h-5 w-5 text-muted-foreground" />}
               </AvatarFallback>
             </Avatar>
             {authorDisplayName}
@@ -64,7 +64,7 @@ export function TopicListItem({ topic }: TopicListItemProps) {
             <Tag className="h-4 w-4 text-muted-foreground" />
             {topic.tags.filter(t => t.id !== categoryToDisplay?.id).slice(0, 2).map(tag => (
               <Link key={tag.id} href={`/t/${tag.slug}`}>
-                <span 
+                <span
                     className="px-2 py-0.5 bg-secondary text-secondary-foreground rounded-full text-xs hover:bg-secondary/80"
                     style={tag.color ? { backgroundColor: tag.color, color: 'white' } : {}}
                 >

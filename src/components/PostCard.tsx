@@ -4,7 +4,7 @@ import type { Post as PostType } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { MessageSquare, Flag, UserCircle2, MoreVertical } from 'lucide-react'; // ThumbsUp removed
+import { MessageSquare, Flag, UserCircle2, MoreVertical } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import React, { useState } from 'react';
 import { CreatePostForm } from './CreatePostForm';
@@ -30,7 +30,6 @@ interface PostCardProps {
 
 export function PostCard({ post, onReply, topicId, level = 0, currentUserId }: PostCardProps) {
   const [showReplyForm, setShowReplyForm] = useState(false);
-  // Optimistic upvotes and handleUpvote removed
   const { toast } = useToast();
 
   const handleReplySubmit = async (content: string) => {
@@ -50,7 +49,7 @@ export function PostCard({ post, onReply, topicId, level = 0, currentUserId }: P
       });
     }
   };
-  
+
   const isOwnPost = currentUserId && post.author.id === currentUserId;
   const authorDisplayName = post.author?.username || 'Unknown User';
   const authorInitials = authorDisplayName.substring(0, 2).toUpperCase();
@@ -63,7 +62,7 @@ export function PostCard({ post, onReply, topicId, level = 0, currentUserId }: P
           <Avatar className="h-10 w-10">
             <AvatarImage src={post.author?.avatarUrl} alt={authorDisplayName} data-ai-hint="user avatar" />
             <AvatarFallback className="text-sm font-semibold">
-              {post.author?.avatarUrl ? authorInitials : <UserCircle2 className="h-10 w-10 text-muted-foreground" />}
+              {post.author?.username !== 'Unknown User' && post.author?.avatarUrl ? authorInitials : <UserCircle2 className="h-10 w-10 text-muted-foreground" />}
             </AvatarFallback>
           </Avatar>
           <div>
@@ -101,7 +100,6 @@ export function PostCard({ post, onReply, topicId, level = 0, currentUserId }: P
         )}
       </CardContent>
       <CardFooter className="flex items-center justify-start space-x-4 p-4 pt-0">
-        {/* Like button and upvote count removed */}
         <Button variant="ghost" size="sm" onClick={() => setShowReplyForm(!showReplyForm)} className="text-muted-foreground hover:text-primary">
           <MessageSquare className="mr-1.5 h-4 w-4" /> Reply
         </Button>
@@ -121,12 +119,12 @@ export function PostCard({ post, onReply, topicId, level = 0, currentUserId }: P
       {post.replies && post.replies.length > 0 && (
         <div className={`p-4 ${level === 0 ? 'border-t' : ''}`}>
           {post.replies.map(reply => (
-            <PostCard 
-              key={reply.id} 
-              post={reply} 
+            <PostCard
+              key={reply.id}
+              post={reply}
               onReply={onReply}
-              topicId={topicId} 
-              level={level + 1} 
+              topicId={topicId}
+              level={level + 1}
               currentUserId={currentUserId}
             />
           ))}

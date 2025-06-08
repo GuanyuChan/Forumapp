@@ -2,7 +2,7 @@
 import { notFound as nextNotFound } from 'next/navigation';
 import type { Topic, Post as PostType, User } from '@/lib/types';
 import { fetchDiscussionDetails, submitReplyToDiscussion } from '@/services/flarum';
-import { placeholderUser } from '@/lib/placeholder-data'; 
+import { placeholderUser } from '@/lib/placeholder-data';
 
 import { PostCard } from '@/components/PostCard';
 import { RootReplyFormWrapper } from '@/components/RootReplyFormWrapper';
@@ -38,13 +38,16 @@ export async function handleReplyAction(
   if (newPost) {
     revalidatePath(`/topics/${topicId}`);
     // Revalidate tag pages if the topic has tags
-    if (newPost.author?.id) { // Ensure author exists to prevent error on newPost creation
-        const fetchedTopicData = await fetchDiscussionDetails(topicId); // Renamed to avoid conflict
-        fetchedTopicData?.topic.tags?.forEach(tag => {
-            if (tag.slug) {
-                revalidatePath(`/t/${tag.slug}`);
-            }
-        });
+    // Ensure author exists to prevent error on newPost creation and topic has tags
+    if (newPost.author?.id) {
+        const fetchedTopicData = await fetchDiscussionDetails(topicId);
+        if (fetchedTopicData?.topic.tags) {
+            fetchedTopicData.topic.tags.forEach(tag => {
+                if (tag.slug) {
+                    revalidatePath(`/t/${tag.slug}`);
+                }
+            });
+        }
     }
     return { success: true, post: newPost };
   } else {
@@ -55,7 +58,7 @@ export async function handleReplyAction(
 
 export default async function TopicPage({ params }: { params: { topicId: string } }) {
   const topicIdFromParam = params.topicId;
-  const currentUser = getCurrentUser(); // This should be a server-side way to get user
+  const currentUser = getCurrentUser();
 
   const fetchedTopicAndPosts = await fetchDiscussionDetails(topicIdFromParam);
 
@@ -79,7 +82,7 @@ export default async function TopicPage({ params }: { params: { topicId: string 
               <Avatar className="h-6 w-6 mr-1.5">
                 <AvatarImage src={topic.author.avatarUrl} alt={authorDisplayName} data-ai-hint="user avatar small"/>
                 <AvatarFallback className="text-xs font-semibold">
-                   {topic.author.avatarUrl ? authorInitials : <UserCircle2 className="h-6 w-6" />}
+                   {topic.author.username !== 'Unknown User' && topic.author.avatarUrl ? authorInitials : <UserCircle2 className="h-6 w-6" />}
                 </AvatarFallback>
               </Avatar>
               <span>{authorDisplayName}</span>
@@ -120,7 +123,7 @@ export default async function TopicPage({ params }: { params: { topicId: string 
           <PostCard
             key={post.id}
             post={post}
-            onReply={handleReplyAction} 
+            onReply={handleReplyAction}
             topicId={topic.id}
             currentUserId={currentUser.id}
           />
