@@ -29,44 +29,17 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center gap-3 mb-4">
+      <div className="mb-4"> {/* Removed flex items-center gap-3 */}
         <Link href="/" passHref>
           <button className="flex items-center gap-2 px-3 py-1.5 border rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground text-foreground/80">
             <ArrowLeft className="h-4 w-4" />
             Back to Forums
           </button>
         </Link>
-        <h1 className="text-xl font-semibold text-foreground">{categoryDetails.name}</h1>
+        {/* Removed: <h1 className="text-xl font-semibold text-foreground">{categoryDetails.name}</h1> */}
       </div>
 
-      <section className="pb-6 border-b">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-                <h2 className="text-3xl font-bold tracking-tight text-foreground font-headline mb-1" style={categoryDetails.color ? { color: categoryDetails.color } : {}}>
-                {categoryDetails.icon && <i className={`${categoryDetails.icon} mr-2`}></i>}
-                {categoryDetails.name}
-                </h2>
-                {categoryDetails.description && (
-                <p className="text-muted-foreground mt-1">{categoryDetails.description}</p>
-                )}
-            </div>
-            <Link href={`/api/flarum/feed/tag/${slug}`} target="_blank" passHref>
-                 <button className="flex items-center gap-2 px-4 py-2 border rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground text-foreground/70">
-                    <Rss className="h-4 w-4" />
-                    RSS Feed
-                </button>
-            </Link>
-        </div>
-         <div className="text-sm text-muted-foreground mt-3">
-            {categoryDetails.topicCount} {categoryDetails.topicCount === 1 ? 'topic' : 'topics'}
-            {categoryDetails.lastTopic && (
-                <span className="ml-2 text-xs">
-                    Latest: <Link href={categoryDetails.lastTopic.id ? `/topics/${categoryDetails.lastTopic.id}` : '#'} className="hover:underline">{categoryDetails.lastTopic.title}</Link>
-                    {categoryDetails.lastTopic.authorName && ` by ${categoryDetails.lastTopic.authorName}`}
-                </span>
-            )}
-        </div>
-      </section>
+      {/* Removed the entire <section className="pb-6 border-b"> ... </section> block */}
 
       {topics.length > 0 ? (
         <div className="space-y-4">
