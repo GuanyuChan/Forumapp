@@ -1,7 +1,6 @@
 
-'use client'; // Keep client component if using hooks like useState, useEffect for client-side interactions later
-// However, for primarily server-rendered content based on params, we can make it a Server Component.
-// For now, let's make it a Server Component as data fetching is async.
+// This is now a Server Component.
+// 'use client'; was removed to allow generateMetadata.
 
 import { TopicListItem } from '@/components/TopicListItem';
 import { fetchDiscussionsByTag, fetchCategoryDetailsBySlug } from '@/services/flarum';
@@ -16,9 +15,7 @@ interface CategoryPageProps {
   };
 }
 
-// If making it a server component, remove 'use client' and useEffect/useState
-// export default function CategoryPage({ params }: CategoryPageProps) { // if client
-export default async function CategoryPage({ params }: CategoryPageProps) { // if server
+export default async function CategoryPage({ params }: CategoryPageProps) {
   const { slug } = params;
 
   const categoryDetails: Category | null = await fetchCategoryDetailsBySlug(slug);
