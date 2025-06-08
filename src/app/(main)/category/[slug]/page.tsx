@@ -7,7 +7,7 @@ import { fetchDiscussionsByTag, fetchCategoryDetailsBySlug } from '@/services/fl
 import type { Topic, Category } from '@/lib/types';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { Rss } from 'lucide-react';
+import { Rss, Home } from 'lucide-react'; // Added Home for breadcrumb
 
 interface CategoryPageProps {
   params: {
@@ -21,6 +21,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   const categoryDetails: Category | null = await fetchCategoryDetailsBySlug(slug);
 
   if (!categoryDetails) {
+    console.error(`Category with slug "${slug}" not found after fetch.`);
     notFound(); // Triggers the Next.js 404 page
   }
 
@@ -28,6 +29,15 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
   return (
     <div className="space-y-8">
+      <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-4">
+        <Link href="/" className="hover:underline flex items-center">
+          <Home className="h-4 w-4 mr-1.5" />
+          Home
+        </Link>
+        <span>/</span>
+        <span className="font-medium text-foreground">{categoryDetails.name}</span>
+      </nav>
+
       <section className="pb-6 border-b">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -39,7 +49,6 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                 <p className="text-muted-foreground mt-1">{categoryDetails.description}</p>
                 )}
             </div>
-            {/* Placeholder for "Subscribe to category" or other actions */}
             <Link href={`/api/flarum/feed/tag/${slug}`} target="_blank" passHref>
                  <button className="flex items-center gap-2 px-4 py-2 border rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground text-foreground/70">
                     <Rss className="h-4 w-4" />
@@ -49,7 +58,12 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         </div>
          <div className="text-sm text-muted-foreground mt-3">
             {categoryDetails.topicCount} {categoryDetails.topicCount === 1 ? 'topic' : 'topics'}
-            {/* Add post count if available and meaningful */}
+            {categoryDetails.lastTopic && (
+                <span className="ml-2 text-xs">
+                    Latest: <Link href={categoryDetails.lastTopic.id ? `/topics/${categoryDetails.lastTopic.id}` : '#'} className="hover:underline">{categoryDetails.lastTopic.title}</Link>
+                    {categoryDetails.lastTopic.authorName && ` by ${categoryDetails.lastTopic.authorName}`}
+                </span>
+            )}
         </div>
       </section>
 
