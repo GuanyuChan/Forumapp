@@ -229,7 +229,7 @@ function transformFlarumDiscussion(discussion: FlarumDiscussion, included?: Flar
 }
 
 export async function fetchCategories(): Promise<Category[]> {
-  const response = await flarumFetch<FlarumApiListResponse<FlarumTag>>('/tags?include=lastPostedDiscussion,lastPostedDiscussion.user,lastPostedDiscussion.lastPostedUser&sort=position');
+  const response = await flarumFetch<FlarumApiListResponse<FlarumTag>>('/tags?include=lastPostedDiscussion,lastPostedDiscussion.user&sort=position');
 
   if (!response || !response.data) {
     return [];
@@ -246,16 +246,17 @@ export async function fetchCategories(): Promise<Category[]> {
         const includedDiscussion = findIncludedResource<FlarumDiscussion>(response.included, 'discussions', discussionId);
 
         if (includedDiscussion) {
-            let authorName = '未知用户'; // Default to '未知用户'
+            let authorName = '未知用户'; 
             let userToDisplay: FlarumUser | undefined;
 
-            // Prioritize the user who made the last post in that discussion
+            // Try to get the user who made the last post in that discussion
+            // This data might not be available if 'lastPostedDiscussion.lastPostedUser' was the problematic include
             const lastPosterRelationship = includedDiscussion.relationships?.lastPostedUser?.data as FlarumResourceIdentifier;
             if (lastPosterRelationship && lastPosterRelationship.id) {
                 userToDisplay = findIncludedResource<FlarumUser>(response.included, 'users', lastPosterRelationship.id);
             }
             
-            // If last poster isn't found or not available, fallback to the original author of the discussion
+            // If last poster isn't found (or their data wasn't included), fallback to the original author of the discussion
             if (!userToDisplay) {
                 const originalAuthorRelationship = includedDiscussion.relationships?.user?.data as FlarumResourceIdentifier;
                 if (originalAuthorRelationship && originalAuthorRelationship.id) {
@@ -276,7 +277,7 @@ export async function fetchCategories(): Promise<Category[]> {
         } else {
              lastTopic = {
                 id: discussionId, 
-                title: `分类 ${tag.attributes.name} 中的最新主题`, // Placeholder if discussion details not found, translated
+                title: `分类 ${tag.attributes.name} 中的最新主题`, 
                 authorName: '未知用户',
             };
         }
@@ -299,7 +300,7 @@ export async function fetchCategories(): Promise<Category[]> {
 }
 
 export async function fetchCategoryDetailsBySlug(slug: string): Promise<Category | null> {
-  const endpoint = `/tags?filter[slug]=${slug}`; // Removed include for simplicity, can be added back if needed
+  const endpoint = `/tags?filter[slug]=${slug}`; 
   const response = await flarumFetch<FlarumApiListResponse<FlarumTag>>(endpoint);
 
   if (!response || !response.data || response.data.length === 0) {
@@ -310,16 +311,12 @@ export async function fetchCategoryDetailsBySlug(slug: string): Promise<Category
   const tag = response.data[0]; 
   let lastTopicDetails;
 
-  // Note: lastPostedDiscussion might not be included here if not requested in the endpoint.
-  // The current endpoint does not include it. If you need it, add `&include=lastPostedDiscussion`
   const lastPostedDiscussionData = tag.relationships?.lastPostedDiscussion?.data as FlarumResourceIdentifier;
   if (lastPostedDiscussionData && lastPostedDiscussionData.id) {
       const discussionId = lastPostedDiscussionData.id;
-      // To get title/author, you'd need to ensure lastPostedDiscussion and its user are included,
-      // or make another fetch. For now, this is simplified.
       lastTopicDetails = {
           id: discussionId,
-          title: "查看最新主题", // Generic title as details are not fetched here
+          title: "查看最新主题", 
       };
   }
 
@@ -350,6 +347,7 @@ export async function fetchDiscussionsByTag(tagSlug: string): Promise<Topic[]> {
 
 
 export async function fetchDiscussionDetails(discussionIdentifier: string): Promise<{ topic: Topic; posts: Post[] } | null> {
+  // Simplified include from previous step: user,tags,posts,posts.user
   const endpoint = `/discussions/${discussionIdentifier}?include=user,tags,posts,posts.user`;
   const response = await flarumFetch<FlarumApiSingleResponse<FlarumDiscussion>>(endpoint);
 
@@ -373,6 +371,7 @@ export async function fetchDiscussionDetails(discussionIdentifier: string): Prom
       }
     });
   } else if (response.included) {
+    // Fallback if posts are not directly in relationships but present in included data
     posts = response.included
       .filter((inc): inc is FlarumPostType =>
         inc.type === 'posts' &&
@@ -382,16 +381,19 @@ export async function fetchDiscussionDetails(discussionIdentifier: string): Prom
       .filter((post): post is Post => post !== undefined);
   }
   
+  // Ensure firstPost is at the beginning of the posts array if it exists and is part of the posts
   if (topic.firstPost) {
     const firstPostIndex = posts.findIndex(p => p.id === topic.firstPost?.id);
     if (firstPostIndex > -1) {
       const [fp] = posts.splice(firstPostIndex, 1);
       posts.unshift(fp);
     } else {
+      // If not found in the fetched posts list (shouldn't happen with correct includes), add it
       posts.unshift(topic.firstPost);
     }
   }
 
+  // Sort posts by creation date
   posts.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
   return { topic, posts };
@@ -439,6 +441,7 @@ export async function submitReplyToDiscussion(discussionId: string, content: str
     
     const newPost = transformFlarumPost(response.data, response.included);
     if (newPost) {
+        // Ensure the author of the new post is the current user, as API might return a generic user initially
         if (newPost.author.id === 'unknown' || newPost.author.id !== currentUser.id) {
             newPost.author = currentUser;
         }
