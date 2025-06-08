@@ -7,8 +7,8 @@ import { placeholderUser } from '@/lib/placeholder-data';
 import { PostCard } from '@/components/PostCard';
 import { RootReplyFormWrapper } from '@/components/RootReplyFormWrapper';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { UserCircle2, Clock, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button'; // Added Button
+import { UserCircle2, Clock, ArrowLeft } from 'lucide-react'; // Added ArrowLeft
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { revalidatePath } from 'next/cache';
@@ -17,7 +17,7 @@ const DEFAULT_AVATAR_PLACEHOLDER = 'https://placehold.co/100x100.png';
 
 const getCurrentUser = (): User => {
   // In a real app, this would come from a session or auth context
-  return placeholderUser; 
+  return placeholderUser;
 };
 
 export async function handleReplyAction(
@@ -69,27 +69,26 @@ export default async function TopicPage({ params }: { params: { topicId: string 
   }
 
   const { topic, posts: initialPosts } = fetchedTopicAndPosts;
-  
-  // topic.author is now guaranteed to be a User object by transformFlarumUser
+
   const authorDisplayName = topic.author.username;
   const authorAvatarUrl = topic.author.avatarUrl;
   const authorInitials = authorDisplayName.substring(0, 2).toUpperCase();
 
   return (
     <div className="space-y-6">
+      <div className="mb-4">
+        <Link href="/" passHref>
+          <Button variant="outline" size="sm">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Forums
+          </Button>
+        </Link>
+      </div>
+
       <header className="pb-4 border-b">
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground font-headline mb-2">
           {topic.title}
         </h1>
-        
-        {!topic.category && (
-          <Alert variant="default" className="my-3 bg-yellow-100 border-yellow-300 text-yellow-800 dark:bg-yellow-900/30 dark:border-yellow-700 dark:text-yellow-300 p-3 rounded-md text-sm">
-            <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 inline-block mr-2" />
-            <AlertDescription className="inline text-yellow-700 dark:text-yellow-300">
-              Primary category information for this topic might be missing or unclear.
-            </AlertDescription>
-          </Alert>
-        )}
 
         <div className="flex items-center text-sm text-muted-foreground space-x-3 flex-wrap gap-y-1">
           <Link href={`/profile/${topic.author.username}`} className="flex items-center hover:underline">
@@ -109,15 +108,7 @@ export default async function TopicPage({ params }: { params: { topicId: string 
             <Clock className="mr-1 h-4 w-4"/>
             {formatDistanceToNow(new Date(topic.createdAt), { addSuffix: true })}
           </span>
-           {topic.category && (
-            <>
-              <span>&bull;</span>
-              <Link href={`/t/${topic.category.slug}`} className="hover:underline flex items-center" style={topic.category.color ? { color: topic.category.color } : {}}>
-                {topic.category.icon && <i className={`${topic.category.icon} mr-1.5`}></i>}
-                <span>{topic.category.name}</span>
-              </Link>
-            </>
-          )}
+           {/* Removed primary category display and warning box */}
         </div>
         {topic.tags && topic.tags.filter(t => t.id !== topic.category?.id).length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
