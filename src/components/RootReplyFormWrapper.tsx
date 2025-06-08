@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { FormEvent } from 'react';
@@ -19,20 +18,18 @@ export function RootReplyFormWrapper({ topicId, onReplyAction }: RootReplyFormWr
   const { toast } = useToast();
 
   const handleRootSubmit = async (content: string): Promise<void> => {
-    // title and tags from CreatePostForm's onSubmit are ignored here as it's a reply
-    const result = await onReplyAction(topicId, content, undefined); // parentPostId is undefined for root reply
+    const result = await onReplyAction(topicId, content, undefined); 
 
     if (result.success) {
       toast({
-        title: "Reply Posted!",
-        description: "Your reply has been added to the discussion.",
+        title: "回复已发布!",
+        description: "您的回复已添加到讨论中。",
         variant: "default",
       });
-      // CreatePostForm will clear its own content input on successful submission handled by its internal state.
     } else {
       toast({
-        title: "Error Posting Reply",
-        description: result.error || "Could not post your reply. Please try again.",
+        title: "发布回复时出错",
+        description: result.error || "无法发布您的回复。请再试一次。",
         variant: "destructive",
       });
     }
@@ -41,12 +38,10 @@ export function RootReplyFormWrapper({ topicId, onReplyAction }: RootReplyFormWr
   return (
     <CreatePostForm
       onSubmit={async (content) => {
-        // This async function is defined in the Client Component, so it's fine.
-        // It calls handleRootSubmit, which in turn calls the Server Action.
         await handleRootSubmit(content);
       }}
-      placeholder="Write your reply..."
-      submitButtonText="Post Reply"
+      placeholder="写下你的回复..."
+      submitButtonText="发布回复"
       isReplyForm={true}
     />
   );

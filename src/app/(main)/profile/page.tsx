@@ -5,20 +5,22 @@ import { placeholderUser, placeholderTopics } from '@/lib/placeholder-data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Edit3, Mail, CalendarDays, UserCircle2, MessageSquare } from 'lucide-react';
+import { Edit3, Mail, CalendarDays, UserCircle2, MessageSquare, ThumbsUp } from 'lucide-react';
 import { TopicListItem } from '@/components/TopicListItem';
 import { format } from 'date-fns';
+import { zhCN } from 'date-fns/locale';
 
 export default function ProfilePage() {
-  // In a real app, you'd fetch user data based on ID or session
   const [user, setUser] = useState<User | null>(null);
+  const [reputation, setReputation] = useState<string | null>(null);
 
   useEffect(() => {
-    setUser(placeholderUser); // Using placeholder for now
+    setUser(placeholderUser);
+    setReputation((Math.random() * 500).toFixed(0));
   }, []);
 
   if (!user) {
-    return <p>Loading profile...</p>; // Or a skeleton loader
+    return <p>加载个人资料...</p>; 
   }
 
   const userTopics = placeholderTopics.filter(topic => topic.author.id === user.id);
@@ -40,18 +42,17 @@ export default function ProfilePage() {
               <div className="mt-3 flex flex-wrap justify-center md:justify-start gap-x-4 gap-y-2 text-sm text-muted-foreground">
                 <span className="flex items-center">
                   <CalendarDays className="h-4 w-4 mr-1.5" />
-                  Joined {format(new Date(user.joinedAt), "MMMM yyyy")}
+                  加入于 {format(new Date(user.joinedAt), "yyyy年MMMM", { locale: zhCN })}
                 </span>
-                {/* Placeholder for email, would typically be private */}
                 <span className="flex items-center">
                   <Mail className="h-4 w-4 mr-1.5" />
-                  Contact (Placeholder)
+                  联系方式 (占位符)
                 </span>
               </div>
             </div>
             <Button variant="outline" size="sm">
               <Edit3 className="h-4 w-4 mr-2" />
-              Edit Profile
+              编辑个人资料
             </Button>
           </div>
         </CardHeader>
@@ -59,24 +60,24 @@ export default function ProfilePage() {
             <div className="flex flex-col items-center p-4 bg-secondary/50 rounded-lg">
                 <MessageSquare className="h-8 w-8 text-primary mb-2"/>
                 <p className="text-2xl font-semibold">{userTopics.length}</p>
-                <p className="text-sm text-muted-foreground">Topics Started</p>
+                <p className="text-sm text-muted-foreground">发起的主题</p>
             </div>
              <div className="flex flex-col items-center p-4 bg-secondary/50 rounded-lg">
                 <UserCircle2 className="h-8 w-8 text-primary mb-2"/>
                 <p className="text-2xl font-semibold">{userTopics.reduce((acc, t) => acc + t.postCount, 0)}</p>
-                <p className="text-sm text-muted-foreground">Total Posts</p>
+                <p className="text-sm text-muted-foreground">总帖子数</p>
             </div>
              <div className="flex flex-col items-center p-4 bg-secondary/50 rounded-lg">
                 <ThumbsUp className="h-8 w-8 text-primary mb-2"/>
-                <p className="text-2xl font-semibold">{(Math.random()*500).toFixed(0)}</p>
-                <p className="text-sm text-muted-foreground">Reputation</p>
+                {reputation !== null ? <p className="text-2xl font-semibold">{reputation}</p> : <p className="text-2xl font-semibold">...</p>}
+                <p className="text-sm text-muted-foreground">声望</p>
             </div>
         </CardContent>
       </Card>
 
       <section>
         <h2 className="text-2xl font-semibold mb-4 text-foreground font-headline">
-          {user.username}'s Topics
+          {user.username}的主题
         </h2>
         {userTopics.length > 0 ? (
           <div className="space-y-4">
@@ -86,7 +87,7 @@ export default function ProfilePage() {
           </div>
         ) : (
           <p className="text-muted-foreground">
-            {user.username} hasn't started any topics yet.
+            {user.username} 还没有发起任何主题。
           </p>
         )}
       </section>

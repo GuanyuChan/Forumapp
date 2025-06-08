@@ -1,11 +1,11 @@
 
 import { Button } from '@/components/ui/button';
 import { TopicListItem } from '@/components/TopicListItem';
-import { placeholderTopics } from '@/lib/placeholder-data'; // Keep for recent topics for now
+import { placeholderTopics } from '@/lib/placeholder-data'; 
 import type { Category } from '@/lib/types';
 import Link from 'next/link';
 import { PlusCircle } from 'lucide-react';
-import { fetchCategories } from '@/services/flarum'; // Import the new service
+import { fetchCategories } from '@/services/flarum';
 
 export default async function HomePage() {
   const categories: Category[] = await fetchCategories();
@@ -14,12 +14,12 @@ export default async function HomePage() {
     <div className="space-y-8">
       <section className="flex justify-between items-center">
         <h1 className="text-3xl font-bold tracking-tight text-foreground font-headline">
-          Welcome to Zenith Forums
+          欢迎来到 11A4008深论坛
         </h1>
         <Link href="/new-topic">
           <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
             <PlusCircle className="mr-2 h-5 w-5" />
-            Create New Topic
+            创建新主题
           </Button>
         </Link>
       </section>
@@ -33,27 +33,26 @@ export default async function HomePage() {
                   {category.icon && <i className={`${category.icon} mr-2`}></i>}
                   {category.name}
                 </h3>
-                <p className="text-sm text-muted-foreground mb-3">{category.description || 'No description available.'}</p>
+                <p className="text-sm text-muted-foreground mb-3">{category.description || '暂无描述.'}</p>
               </div>
               <div className="text-xs text-muted-foreground">
-                <p>{category.topicCount} topics {category.postCount ? `· ${category.postCount} posts` : ''}</p>
+                <p>{category.topicCount} 个主题 {category.postCount ? `· ${category.postCount} 个帖子` : ''}</p>
                 {category.lastTopic && (
                   <p className="mt-1 truncate">
-                    Last: {category.lastTopic.title} 
-                    {category.lastTopic.authorName ? ` by ${category.lastTopic.authorName}` : ''}
+                    最新: {category.lastTopic.title} 
+                    {category.lastTopic.authorName ? ` 由 ${category.lastTopic.authorName}` : ''}
                   </p>
                 )}
               </div>
             </div>
           </Link>
         )) : (
-          <p className="text-muted-foreground col-span-full text-center">No categories found or unable to load categories from the forum.</p>
+          <p className="text-muted-foreground col-span-full text-center">未找到分类或无法从论坛加载分类。</p>
         )}
       </section>
       
       <section>
-        <h2 className="text-2xl font-semibold mb-6 text-foreground font-headline">Recent Topics (Placeholder)</h2>
-        {/* Recent topics are still using placeholder data for now. We can integrate this next. */}
+        <h2 className="text-2xl font-semibold mb-6 text-foreground font-headline">最近主题 (占位符)</h2>
         {placeholderTopics.length > 0 ? (
           <div className="space-y-4">
             {placeholderTopics.map(topic => (
@@ -61,7 +60,7 @@ export default async function HomePage() {
             ))}
           </div>
         ) : (
-          <p className="text-muted-foreground">No topics yet. Be the first to create one!</p>
+          <p className="text-muted-foreground">还没有主题，快来创建第一个吧！</p>
         )}
       </section>
     </div>

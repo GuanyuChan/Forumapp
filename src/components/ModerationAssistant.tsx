@@ -11,11 +11,11 @@ import { CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
 
 const defaultCommunityGuidelines = `
-1. Be respectful: No personal attacks, harassment, or hate speech.
-2. Stay on topic: Keep discussions relevant to the forum category.
-3. No spam or self-promotion: Commercial advertising is not allowed unless in designated areas.
-4. No illegal content: Do not share or promote illegal activities.
-5. Use appropriate language: Avoid excessive profanity or offensive terms.
+1. 互相尊重：禁止人身攻击、骚扰或仇恨言论。
+2. 保持主题相关：讨论内容应与论坛分类相关。
+3. 禁止垃圾信息或自我推广：除非在指定区域，否则不允许商业广告。
+4. 禁止非法内容：不得分享或推广非法活动。
+5. 使用恰当语言：避免过度使用亵渎性或冒犯性词语。
 `;
 
 export function ModerationAssistant() {
@@ -28,11 +28,11 @@ export function ModerationAssistant() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!postContent.trim()) {
-      setError("Post content cannot be empty.");
+      setError("帖子内容不能为空。");
       return;
     }
     if (!communityGuidelines.trim()) {
-        setError("Community guidelines cannot be empty.");
+        setError("社区准则不能为空。");
         return;
     }
 
@@ -45,8 +45,8 @@ export function ModerationAssistant() {
       const moderationResult = await moderatePost(input);
       setResult(moderationResult);
     } catch (err) {
-      console.error("Moderation error:", err);
-      setError(err instanceof Error ? err.message : "An unknown error occurred during moderation.");
+      console.error("审核错误:", err);
+      setError(err instanceof Error ? err.message : "审核过程中发生未知错误。");
     } finally {
       setIsLoading(false);
     }
@@ -55,20 +55,20 @@ export function ModerationAssistant() {
   return (
     <Card className="w-full max-w-2xl mx-auto shadow-xl">
       <CardHeader>
-        <CardTitle className="text-2xl font-bold text-center font-headline">AI Moderation Assistant</CardTitle>
+        <CardTitle className="text-2xl font-bold text-center font-headline">AI 审核助手</CardTitle>
         <CardDescription className="text-center">
-          Enter post content and community guidelines to get an AI-powered moderation suggestion.
+          输入帖子内容和社区准则以获取AI驱动的审核建议。
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <Label htmlFor="postContent" className="text-lg font-medium">Post Content</Label>
+            <Label htmlFor="postContent" className="text-lg font-medium">帖子内容</Label>
             <Textarea
               id="postContent"
               value={postContent}
               onChange={(e) => setPostContent(e.target.value)}
-              placeholder="Enter the user's post content here..."
+              placeholder="在此输入用户的帖子内容..."
               rows={6}
               required
               className="mt-2 text-base bg-background"
@@ -76,7 +76,7 @@ export function ModerationAssistant() {
             />
           </div>
           <div>
-            <Label htmlFor="communityGuidelines" className="text-lg font-medium">Community Guidelines</Label>
+            <Label htmlFor="communityGuidelines" className="text-lg font-medium">社区准则</Label>
             <Textarea
               id="communityGuidelines"
               value={communityGuidelines}
@@ -90,9 +90,9 @@ export function ModerationAssistant() {
           <Button type="submit" className="w-full text-lg py-3 bg-primary hover:bg-primary/90" disabled={isLoading}>
             {isLoading ? (
               <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Analyzing...
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" /> 分析中...
               </>
-            ) : "Analyze Post"}
+            ) : "分析帖子"}
           </Button>
         </form>
       </CardContent>
@@ -101,7 +101,7 @@ export function ModerationAssistant() {
           {error && (
             <Alert variant="destructive" className="w-full">
               <AlertTriangle className="h-5 w-5" />
-              <AlertTitle>Error</AlertTitle>
+              <AlertTitle>错误</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
@@ -109,18 +109,18 @@ export function ModerationAssistant() {
             <Alert className={`w-full ${result.isFlagged ? 'border-destructive/50' : 'border-green-500/50'}`}>
               {result.isFlagged ? <AlertTriangle className="h-5 w-5 text-destructive" /> : <CheckCircle2 className="h-5 w-5 text-green-600" />}
               <AlertTitle className={`font-semibold ${result.isFlagged ? 'text-destructive' : 'text-green-700'}`}>
-                Moderation Result
+                审核结果
               </AlertTitle>
               <AlertDescription className="space-y-2">
                 <p>
-                  <strong>Status:</strong> {result.isFlagged ? 'Flagged as potentially inappropriate' : 'Seems OK'}
+                  <strong>状态:</strong> {result.isFlagged ? '标记为可能不当' : '看起来没问题'}
                 </p>
                 {result.isFlagged && result.flagReason && (
-                  <p><strong>Reason:</strong> {result.flagReason}</p>
+                  <p><strong>原因:</strong> {result.flagReason}</p>
                 )}
                 <div>
                   <p className="mb-1">
-                    <strong>Confidence Score:</strong> {(result.confidenceScore * 100).toFixed(0)}%
+                    <strong>置信度:</strong> {(result.confidenceScore * 100).toFixed(0)}%
                   </p>
                   <Progress value={result.confidenceScore * 100} className={`h-2 ${result.isFlagged ? '[&>*]:bg-destructive' : '[&>*]:bg-green-600'}`} />
                 </div>

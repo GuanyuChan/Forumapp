@@ -21,25 +21,22 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   const categoryDetails: Category | null = await fetchCategoryDetailsBySlug(slug);
 
   if (!categoryDetails) {
-    console.error(`Category with slug "${slug}" not found after fetch.`);
-    notFound(); // Triggers the Next.js 404 page
+    console.error(`未找到 slug 为 "${slug}" 的分类。`);
+    notFound(); 
   }
 
   const topics: Topic[] = await fetchDiscussionsByTag(slug);
 
   return (
     <div className="space-y-8">
-      <div className="mb-4"> {/* Removed flex items-center gap-3 */}
+       <div className="mb-6 flex items-center gap-3">
         <Link href="/" passHref>
           <button className="flex items-center gap-2 px-3 py-1.5 border rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground text-foreground/80">
             <ArrowLeft className="h-4 w-4" />
-            Back to Forums
+            返回论坛
           </button>
         </Link>
-        {/* Removed: <h1 className="text-xl font-semibold text-foreground">{categoryDetails.name}</h1> */}
       </div>
-
-      {/* Removed the entire <section className="pb-6 border-b"> ... </section> block */}
 
       {topics.length > 0 ? (
         <div className="space-y-4">
@@ -49,13 +46,13 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         </div>
       ) : (
         <div className="text-center py-12">
-          <Rss className="mx-auto h-16 w-16 text-muted-foreground/30 mb-4" /> {/* Placeholder icon */}
-          <h2 className="text-xl font-semibold text-foreground mb-2">No Topics Yet</h2>
+          <Rss className="mx-auto h-16 w-16 text-muted-foreground/30 mb-4" /> 
+          <h2 className="text-xl font-semibold text-foreground mb-2">暂无主题</h2>
           <p className="text-muted-foreground">
-            There are no topics in the "{categoryDetails.name}" category. Why not be the first to post one?
+            “{categoryDetails.name}” 分类下还没有主题。要不要成为第一个发帖的人？
           </p>
           <Link href="/new-topic" className="mt-4 inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 text-sm font-medium">
-              Create New Topic
+              创建新主题
           </Link>
         </div>
       )}
@@ -63,19 +60,18 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   );
 }
 
-// Optional: Generate metadata for SEO
 export async function generateMetadata({ params }: CategoryPageProps) {
   const { slug } = params;
   const categoryDetails = await fetchCategoryDetailsBySlug(slug);
 
   if (!categoryDetails) {
     return {
-      title: 'Category Not Found',
+      title: '分类未找到',
     };
   }
 
   return {
-    title: `${categoryDetails.name} - Zenith Forums`,
-    description: categoryDetails.description || `Discussions in the ${categoryDetails.name} category.`,
+    title: `${categoryDetails.name} - 11A4008深论坛`,
+    description: categoryDetails.description || `“${categoryDetails.name}”分类下的讨论。`,
   };
 }

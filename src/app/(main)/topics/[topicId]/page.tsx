@@ -7,16 +7,16 @@ import { placeholderUser } from '@/lib/placeholder-data';
 import { PostCard } from '@/components/PostCard';
 import { RootReplyFormWrapper } from '@/components/RootReplyFormWrapper';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button'; // Added Button
-import { UserCircle2, Clock, ArrowLeft } from 'lucide-react'; // Added ArrowLeft
+import { Button } from '@/components/ui/button';
+import { UserCircle2, Clock, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
+import { zhCN } from 'date-fns/locale';
 import { revalidatePath } from 'next/cache';
 
 const DEFAULT_AVATAR_PLACEHOLDER = 'https://placehold.co/100x100.png';
 
 const getCurrentUser = (): User => {
-  // In a real app, this would come from a session or auth context
   return placeholderUser;
 };
 
@@ -28,13 +28,13 @@ export async function handleReplyAction(
   'use server';
 
   if (!topicId || !content) {
-    return { success: false, error: "Topic ID and content are required." };
+    return { success: false, error: "主题ID和内容不能为空。" };
   }
 
   const currentUserForAction = getCurrentUser();
   if (!currentUserForAction || currentUserForAction.id === 'unknown') {
-    console.error('Server Action: Current user ID is missing or invalid. Cannot submit reply.');
-    return { success: false, error: 'Authentication error. Could not determine current user.' };
+    console.error('服务器操作：当前用户ID缺失或无效。无法提交回复。');
+    return { success: false, error: '认证错误。无法确定当前用户。' };
   }
 
   const newPost = await submitReplyToDiscussion(topicId, content, currentUserForAction);
@@ -53,7 +53,7 @@ export async function handleReplyAction(
     }
     return { success: true, post: newPost };
   } else {
-    return { success: false, error: "Failed to post reply." };
+    return { success: false, error: "回复失败。" };
   }
 }
 
@@ -80,7 +80,7 @@ export default async function TopicPage({ params }: { params: { topicId: string 
         <Link href="/" passHref>
           <Button variant="outline" size="sm">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Forums
+            返回论坛
           </Button>
         </Link>
       </div>
@@ -95,7 +95,7 @@ export default async function TopicPage({ params }: { params: { topicId: string 
             <Avatar className="h-6 w-6 mr-1.5">
               <AvatarImage src={authorAvatarUrl === DEFAULT_AVATAR_PLACEHOLDER ? undefined : authorAvatarUrl} alt={authorDisplayName} data-ai-hint="user avatar small"/>
               <AvatarFallback className="flex items-center justify-center">
-                 {authorDisplayName !== 'Unknown User' && authorAvatarUrl !== DEFAULT_AVATAR_PLACEHOLDER ? (
+                 {authorDisplayName !== '未知用户' && authorAvatarUrl !== DEFAULT_AVATAR_PLACEHOLDER ? (
                     <span className="text-xs font-semibold">{authorInitials}</span>
                  ) : (
                     <UserCircle2 className="h-full w-full" />
@@ -106,9 +106,8 @@ export default async function TopicPage({ params }: { params: { topicId: string 
           </Link>
           <span className="flex items-center">
             <Clock className="mr-1 h-4 w-4"/>
-            {formatDistanceToNow(new Date(topic.createdAt), { addSuffix: true })}
+            {formatDistanceToNow(new Date(topic.createdAt), { addSuffix: true, locale: zhCN })}
           </span>
-           {/* Removed primary category display and warning box */}
         </div>
         {topic.tags && topic.tags.filter(t => t.id !== topic.category?.id).length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
@@ -139,7 +138,7 @@ export default async function TopicPage({ params }: { params: { topicId: string 
       </div>
 
       <div className="pt-6 border-t">
-        <h2 className="text-xl font-semibold mb-3 text-foreground font-headline">Join the Conversation</h2>
+        <h2 className="text-xl font-semibold mb-3 text-foreground font-headline">参与讨论</h2>
         <RootReplyFormWrapper topicId={topic.id} onReplyAction={handleReplyAction} />
       </div>
     </div>
@@ -152,11 +151,11 @@ export async function generateMetadata({ params }: { params: { topicId: string }
 
   if (!fetchedData?.topic) {
     return {
-      title: 'Topic Not Found - Zenith Forums',
+      title: '主题未找到 - 11A4008深论坛',
     };
   }
   return {
-    title: `${fetchedData.topic.title} - Zenith Forums`,
-    description: fetchedData.topic.firstPost?.content.substring(0, 160) || `View the discussion on ${fetchedData.topic.title}.`,
+    title: `${fetchedData.topic.title} - 11A4008深论坛`,
+    description: fetchedData.topic.firstPost?.content.substring(0, 160) || `查看关于“${fetchedData.topic.title}”的讨论。`,
   };
 }

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, type FormEvent } from 'react';
@@ -6,10 +5,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface CreatePostFormProps {
-  onSubmit: (content: string, title?: string, tags?: string) => Promise<any>; // Changed Promise<void> to Promise<any>
+  onSubmit: (content: string, title?: string, tags?: string) => Promise<any>;
   placeholder?: string;
   submitButtonText?: string;
   isNewTopic?: boolean;
@@ -18,8 +17,8 @@ interface CreatePostFormProps {
 
 export function CreatePostForm({
   onSubmit,
-  placeholder = "What's on your mind?",
-  submitButtonText = "Post",
+  placeholder = "你在想什么?",
+  submitButtonText = "发布",
   isNewTopic = false,
   isReplyForm = false,
 }: CreatePostFormProps) {
@@ -31,28 +30,21 @@ export function CreatePostForm({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!content || (isNewTopic && !title)) {
-      // Basic validation: content is always required. If it's a new topic, title is also required.
-      // For replies, only content is required (title/tags inputs are not shown).
       if (isReplyForm && !content) return;
       if (isNewTopic && (!content || !title)) return;
-      if (!isNewTopic && !isReplyForm && !content) return; // Generic post case if ever used
+      if (!isNewTopic && !isReplyForm && !content) return;
     }
-
 
     setIsLoading(true);
     try {
       await onSubmit(content, title, tags);
-      // Clear form only on successful submission.
-      // If onSubmit throws or returns error, form content is preserved.
       setContent('');
       if (isNewTopic) {
         setTitle('');
         setTags('');
       }
     } catch (error) {
-      console.error("Failed to submit post via CreatePostForm:", error);
-      // Error is handled by the caller (e.g. RootReplyFormWrapper shows a toast)
-      // We don't clear the form here to allow user to retry.
+      console.error("通过CreatePostForm提交帖子失败:", error);
     } finally {
       setIsLoading(false);
     }
@@ -63,12 +55,12 @@ export function CreatePostForm({
       {isNewTopic && (
         <>
           <div>
-            <Label htmlFor="topic-title" className="mb-1 block font-medium">Title</Label>
+            <Label htmlFor="topic-title" className="mb-1 block font-medium">标题</Label>
             <Input
               id="topic-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter topic title"
+              placeholder="输入主题标题"
               required
               disabled={isLoading}
               className="bg-background"
@@ -77,8 +69,8 @@ export function CreatePostForm({
         </>
       )}
       <div>
-        {isNewTopic && <Label htmlFor="topic-content" className="mb-1 block font-medium">Your Post</Label>}
-        {!isNewTopic && !isReplyForm && <Label htmlFor="post-content" className="mb-1 block font-medium">Your Post</Label>}
+        {isNewTopic && <Label htmlFor="topic-content" className="mb-1 block font-medium">你的帖子</Label>}
+        {!isNewTopic && !isReplyForm && <Label htmlFor="post-content" className="mb-1 block font-medium">你的帖子</Label>}
         <Textarea
           id={isNewTopic ? "topic-content" : (isReplyForm ? "reply-content" : "post-content")}
           value={content}
@@ -92,12 +84,12 @@ export function CreatePostForm({
       </div>
       {isNewTopic && (
          <div>
-            <Label htmlFor="topic-tags" className="mb-1 block font-medium">Tags (optional, comma-separated)</Label>
+            <Label htmlFor="topic-tags" className="mb-1 block font-medium">标签 (可选, 逗号分隔)</Label>
             <Input
               id="topic-tags"
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              placeholder="e.g., announcement, help, discussion"
+              placeholder="例如: 公告, 求助, 讨论"
               disabled={isLoading}
               className="bg-background"
             />
@@ -105,7 +97,7 @@ export function CreatePostForm({
       )}
       <div className="flex justify-end">
         <Button type="submit" disabled={isLoading || !content.trim()} className="bg-accent text-accent-foreground hover:bg-accent/90">
-          {isLoading ? "Submitting..." : submitButtonText}
+          {isLoading ? "提交中..." : submitButtonText}
         </Button>
       </div>
     </form>
@@ -118,7 +110,7 @@ export function CreatePostForm({
   return (
     <Card className="shadow-md">
       <CardHeader>
-        <CardTitle className="font-headline">{isNewTopic ? "Create a New Topic" : "Write a Post"}</CardTitle>
+        <CardTitle className="font-headline">{isNewTopic ? "创建新主题" : "撰写帖子"}</CardTitle>
       </CardHeader>
       <CardContent>
         {formContent}
@@ -126,4 +118,3 @@ export function CreatePostForm({
     </Card>
   );
 }
-

@@ -4,10 +4,10 @@ export function ZenithForumsLogo(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 200 50"
-      width="150"
+      viewBox="0 0 280 50" // Adjusted viewBox for longer text
+      width="210" // Adjusted width
       height="37.5"
-      aria-label="Zenith Forums Logo"
+      aria-label="11A4008深论坛 标志"
       {...props}
     >
       <defs>
@@ -19,13 +19,13 @@ export function ZenithForumsLogo(props: SVGProps<SVGSVGElement>) {
       <text
         x="10"
         y="35"
-        fontFamily="Roboto, sans-serif"
-        fontSize="30"
+        fontFamily="Roboto, sans-serif" // Consider a Chinese font like 'Noto Sans SC', 'Source Han Sans' for better rendering
+        fontSize="28" // Slightly reduced font size for longer text
         fontWeight="bold"
         fill="url(#logoGradient)"
         className="fill-primary group-hover:fill-accent transition-colors duration-300"
       >
-        Zenith Forums
+        11A4008深论坛
       </text>
     </svg>
   );

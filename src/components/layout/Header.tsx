@@ -1,17 +1,14 @@
-
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Bell, HomeIcon } from 'lucide-react'; // Removed Search, MessageSquarePlusIcon
+import { Menu, Bell, HomeIcon } from 'lucide-react';
 import { ZenithForumsLogo } from '@/components/icons/ZenithForumsLogo';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { href: '/', label: 'Home', icon: HomeIcon },
-  // { href: '/search', label: 'Search', icon: Search }, // Removed
-  // { href: '/new-topic', label: 'New Topic', icon: MessageSquarePlusIcon }, // Removed
+  { href: '/', label: '首页', icon: HomeIcon },
 ];
 
 export function Header() {
@@ -49,7 +46,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-2" aria-label="Zenith Forums Home">
+        <Link href="/" className="flex items-center gap-2" aria-label="11A4008深论坛 首页">
           <ZenithForumsLogo className="h-8 w-auto" />
         </Link>
 
@@ -62,16 +59,14 @@ export function Header() {
         )}
 
         <div className="flex items-center gap-2 md:gap-3">
-          <Button variant="ghost" size="icon" aria-label="Notifications">
+          <Button variant="ghost" size="icon" aria-label="通知">
             <Bell className="h-5 w-5" />
           </Button>
           
-          {/* Removed Log In and Sign Up buttons block for desktop */}
-
           <div className="md:hidden">
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Open menu">
+                <Button variant="ghost" size="icon" aria-label="打开菜单">
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
@@ -80,7 +75,6 @@ export function Header() {
                   {navItems.map((item) => (
                      <MobileNavLink key={item.href} {...item} />
                   ))}
-                  {/* Removed Log In and Sign Up buttons block for mobile */}
                 </div>
               </SheetContent>
             </Sheet>
@@ -90,4 +84,3 @@ export function Header() {
     </header>
   );
 }
-

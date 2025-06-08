@@ -16,10 +16,9 @@ export default function SearchPage() {
     e.preventDefault();
     if (!searchTerm.trim()) {
       setSearchResults([]);
-      setHasSearched(true); // Even an empty search is a search
+      setHasSearched(true);
       return;
     }
-    // Simulate search
     const results = placeholderTopics.filter(topic =>
       topic.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       topic.firstPost.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -31,7 +30,7 @@ export default function SearchPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold tracking-tight text-foreground font-headline">Search Zenith Forums</h1>
+      <h1 className="text-3xl font-bold tracking-tight text-foreground font-headline">搜索 11A4008深论坛</h1>
       
       <form onSubmit={handleSearch} className="flex items-center gap-3 p-4 border rounded-lg shadow-sm bg-card">
         <div className="relative flex-grow">
@@ -40,7 +39,7 @@ export default function SearchPage() {
             type="search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search for topics, posts, or tags..."
+            placeholder="搜索主题、帖子或标签..."
             className="pl-10 text-base py-3 h-12 bg-background"
           />
           {searchTerm && (
@@ -54,7 +53,7 @@ export default function SearchPage() {
                 setSearchResults([]);
                 setHasSearched(false);
               }}
-              aria-label="Clear search"
+              aria-label="清除搜索"
             >
               <XCircle className="h-5 w-5 text-muted-foreground"/>
             </Button>
@@ -62,14 +61,14 @@ export default function SearchPage() {
         </div>
         <Button type="submit" className="h-12 bg-primary hover:bg-primary/90">
           <SearchIcon className="h-5 w-5 md:mr-2" />
-          <span className="hidden md:inline">Search</span>
+          <span className="hidden md:inline">搜索</span>
         </Button>
       </form>
 
       {hasSearched && (
         <section>
           <h2 className="text-2xl font-semibold mb-4 text-foreground font-headline">
-            {searchResults.length > 0 ? `Search Results (${searchResults.length})` : 'No Results Found'}
+            {searchResults.length > 0 ? `搜索结果 (${searchResults.length})` : '未找到结果'}
           </h2>
           {searchResults.length > 0 ? (
             <div className="space-y-4">
@@ -79,7 +78,7 @@ export default function SearchPage() {
             </div>
           ) : (
             <p className="text-muted-foreground text-center py-8">
-              No topics matched your search for "{searchTerm}". Try a different query.
+              未能找到与 “{searchTerm}” 匹配的主题。请尝试其他查询。
             </p>
           )}
         </section>
@@ -87,7 +86,7 @@ export default function SearchPage() {
        {!hasSearched && (
         <div className="text-center py-10">
           <SearchIcon className="mx-auto h-16 w-16 text-muted-foreground/50 mb-4" />
-          <p className="text-lg text-muted-foreground">Enter a search term to find topics and posts.</p>
+          <p className="text-lg text-muted-foreground">输入搜索词以查找主题和帖子。</p>
         </div>
       )}
     </div>
