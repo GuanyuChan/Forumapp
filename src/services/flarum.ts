@@ -8,7 +8,7 @@ import type {
   FlarumTag,
   FlarumDiscussion,
   FlarumUser,
-  FlarumPostType, // Renamed to avoid conflict with Post type
+  FlarumPost as FlarumPostType, // Renamed to avoid conflict with Post type
   FlarumIncludedResource,
   FlarumApiListResponse,
   FlarumApiSingleResponse,
@@ -93,8 +93,10 @@ function transformFlarumPost(postResource?: FlarumPostType, included?: FlarumInc
 
   let plainContent = postResource.attributes.contentHtml || '';
   if (postResource.attributes.contentType === 'comment') {
+      // Basic HTML stripping, consider a more robust library if complex HTML is expected
       plainContent = plainContent.replace(/<[^>]*>?/gm, '');
   }
+
 
   return {
     id: postResource.id,
@@ -124,8 +126,8 @@ function transformFlarumDiscussion(discussion: FlarumDiscussion, included?: Flar
   const attributes = discussion.attributes;
 
   let author: User | undefined;
-  const authorData = discussion.relationships?.user?.data;
-   if (authorData && !Array.isArray(authorData)) {
+  const authorData = discussion.relationships?.user?.data; // This is FlarumResourceIdentifier | FlarumResourceIdentifier[]
+   if (authorData && !Array.isArray(authorData)) { // Ensure it's a single resource identifier
     const authorResource = findIncludedResource<FlarumUser>(included, 'users', authorData.id);
     author = transformFlarumUser(authorResource);
   }
@@ -141,9 +143,9 @@ function transformFlarumDiscussion(discussion: FlarumDiscussion, included?: Flar
 
   let discussionTags: CategorySummary[] = [];
   const tagsData = discussion.relationships?.tags?.data;
-  if (Array.isArray(tagsData)) {
+  if (Array.isArray(tagsData)) { // tagsData is FlarumResourceIdentifier[]
     tagsData.forEach(tagIdentifier => {
-      if (tagIdentifier && tagIdentifier.id) {
+      if (tagIdentifier && tagIdentifier.id) { // Check if tagIdentifier and its id are defined
         const tagResource = findIncludedResource<FlarumTag>(included, 'tags', tagIdentifier.id);
         const categorySummary = transformFlarumTagToCategorySummary(tagResource);
         if (categorySummary) {
@@ -166,7 +168,7 @@ function transformFlarumDiscussion(discussion: FlarumDiscussion, included?: Flar
     slug: attributes.slug,
     author: author || { id: 'unknown', username: 'Unknown User', avatarUrl: DEFAULT_AVATAR, joinedAt: new Date().toISOString() },
     createdAt: attributes.createdAt,
-    postCount: attributes.commentCount + 1,
+    postCount: attributes.commentCount + 1, // Flarum's commentCount is replies, so +1 for the first post
     viewCount: attributes.viewCount || 0,
     tags: discussionTags,
     firstPost: firstPost,
@@ -186,59 +188,108 @@ export async function fetchCategories(): Promise<Category[]> {
   }
 
   return response.data
-    .filter(tag => !tag.attributes.isHidden && tag.attributes.position !== null)
-    .map((tag: FlarumTag): Category => ({
-      id: tag.id,
-      name: tag.attributes.name,
-      slug: tag.attributes.slug,
-      description: tag.attributes.description,
-      topicCount: tag.attributes.discussionCount,
-      postCount: (tag.attributes as any).commentCount, // Flarum tag itself doesn't directly have commentCount, discussions do.
-      color: tag.attributes.color || undefined,
-      icon: tag.attributes.icon || undefined,
-      lastPostedAt: tag.attributes.lastPostedAt,
-      lastTopic: tag.relationships?.lastPostedDiscussion?.data && !Array.isArray(tag.relationships.lastPostedDiscussion.data) ?
-        {
-            id: tag.relationships.lastPostedDiscussion.data.id,
-            title: `Last topic in ${tag.attributes.name}`, // Placeholder, ideally fetch discussion title
-        } : undefined,
-      discussionCount: tag.attributes.discussionCount,
-    }));
+    .filter(tag => !tag.attributes.isHidden && tag.attributes.position !== null) // Ensure primary tags that are not hidden
+    .map((tag: FlarumTag): Category => {
+      // Attempt to get lastPostedDiscussion details if available
+      let lastTopic;
+      if (tag.relationships?.lastPostedDiscussion?.data && !Array.isArray(tag.relationships.lastPostedDiscussion.data)) {
+        const discussionId = tag.relationships.lastPostedDiscussion.data.id;
+        // In a real scenario, you might want to find this discussion in `response.included` if it's provided
+        // For now, we'll keep it simple as `response.included` is not guaranteed for `/tags` endpoint
+        // and may not contain discussion details unless specifically requested and supported.
+        const includedDiscussion = findIncludedResource<FlarumDiscussion>(response.included, 'discussions', discussionId);
+        if (includedDiscussion) {
+            let authorName;
+            const authorData = includedDiscussion.relationships?.user?.data as FlarumResourceIdentifier;
+            if(authorData) {
+                const authorResource = findIncludedResource<FlarumUser>(response.included, 'users', authorData.id);
+                authorName = authorResource?.attributes.displayName || authorResource?.attributes.username;
+            }
+            lastTopic = {
+                id: discussionId,
+                title: includedDiscussion.attributes.title || 'Untitled Discussion',
+                authorName: authorName,
+                createdAt: includedDiscussion.attributes.createdAt,
+            };
+        } else {
+             lastTopic = { // Fallback if not included
+                id: discussionId,
+                title: `Last topic in ${tag.attributes.name}`,
+            };
+        }
+      }
+
+      return {
+        id: tag.id,
+        name: tag.attributes.name,
+        slug: tag.attributes.slug,
+        description: tag.attributes.description,
+        topicCount: tag.attributes.discussionCount,
+        // Flarum tags don't directly provide a total post count for all discussions under them.
+        // `commentCount` on a tag is not a standard Flarum attribute.
+        // This would require iterating all discussions under the tag and summing their post counts.
+        // For simplicity, we might omit this or use discussionCount as a proxy if needed.
+        postCount: tag.attributes.discussionCount, // Using discussionCount as a proxy or placeholder
+        color: tag.attributes.color || undefined,
+        icon: tag.attributes.icon || undefined,
+        lastPostedAt: tag.attributes.lastPostedAt,
+        lastTopic: lastTopic,
+        discussionCount: tag.attributes.discussionCount,
+      };
+    });
 }
 
-export async function fetchCategoryDetailsBySlug(slug: string): Promise<Category | null> {
-  // Simplified include parameter. Try with just parent and lastPostedDiscussion.
-  // If this still fails, next step would be to remove 'lastPostedDiscussion' or 'parent'.
-  const endpoint = `/tags?filter[slug]=${slug}&include=parent,lastPostedDiscussion`;
-  const response = await flarumFetch<FlarumApiListResponse<FlarumTag>>(endpoint);
 
-  if (!response || !response.data || response.data.length === 0) {
-    console.warn(`Category with slug "${slug}" not found.`);
+export async function fetchCategoryDetailsBySlug(slug: string): Promise<Category | null> {
+  // Try with a simplified include. If 'lastPostedDiscussion.user' caused issues, this might be more stable.
+  // If this still fails, next step is to remove 'lastPostedDiscussion' or 'parent'.
+  const endpoint = `/tags/${slug}?include=parent,lastPostedDiscussion`;
+  // Flarum's API for fetching a single tag by slug is usually /api/tags/{slug}, not a filter.
+  // const endpoint = `/tags?filter[slug]=${slug}&include=parent,lastPostedDiscussion`;
+  
+  const response = await flarumFetch<FlarumApiSingleResponse<FlarumTag>>(endpoint);
+
+  if (!response || !response.data ) {
+    console.warn(`Category with slug "${slug}" not found or API error.`);
     return null;
   }
 
-  const tag = response.data[0];
+  const tag = response.data;
   let lastTopicDetails;
 
+  // Check if lastPostedDiscussion relationship exists and has data
   if (tag.relationships?.lastPostedDiscussion?.data && !Array.isArray(tag.relationships.lastPostedDiscussion.data)) {
       const discussionId = tag.relationships.lastPostedDiscussion.data.id;
+      // Attempt to find the discussion in the included resources
       const discussionResource = findIncludedResource<FlarumDiscussion>(response.included, 'discussions', discussionId);
+      
       if (discussionResource) {
-          // Author details for last topic might not be available if 'lastPostedDiscussion.user' is not included or fails
-          // We'll rely on what's directly available in discussionResource.
           let authorName;
-          const authorData = discussionResource.relationships?.user?.data as FlarumResourceIdentifier;
-          if(authorData){
-             const authorResource = findIncludedResource<FlarumUser>(response.included, 'users', authorData.id);
-             authorName = authorResource?.attributes.displayName || authorResource?.attributes.username;
+          // Check for author of the last posted discussion
+          const authorData = discussionResource.relationships?.user?.data as FlarumResourceIdentifier; // User who started the discussion
+          const lastPosterData = discussionResource.relationships?.lastPostedUser?.data as FlarumResourceIdentifier; // User who made the last post
+
+          if (lastPosterData) { // Prefer last poster for "last topic by"
+            const authorResource = findIncludedResource<FlarumUser>(response.included, 'users', lastPosterData.id);
+            authorName = authorResource?.attributes.displayName || authorResource?.attributes.username;
+          } else if (authorData) { // Fallback to discussion starter
+            const authorResource = findIncludedResource<FlarumUser>(response.included, 'users', authorData.id);
+            authorName = authorResource?.attributes.displayName || authorResource?.attributes.username;
           }
+
 
           lastTopicDetails = {
               id: discussionId,
               title: discussionResource.attributes.title,
-              authorName: authorName, // This might be undefined if user not included
-              createdAt: discussionResource.attributes.createdAt,
+              authorName: authorName, 
+              createdAt: discussionResource.attributes.createdAt, // Or lastPostedAt for the discussion
           };
+      } else {
+        // Fallback if discussion is not in 'included'
+         lastTopicDetails = {
+            id: discussionId,
+            title: "Last topic information unavailable", // Placeholder
+        };
       }
   }
 
@@ -249,7 +300,7 @@ export async function fetchCategoryDetailsBySlug(slug: string): Promise<Category
     slug: tag.attributes.slug,
     description: tag.attributes.description,
     topicCount: tag.attributes.discussionCount,
-    postCount: (tag.attributes as any).commentCount, // placeholder
+    // postCount: (tag.attributes as any).commentCount, // As before, this is not a standard attribute for a tag resource
     discussionCount: tag.attributes.discussionCount,
     color: tag.attributes.color || undefined,
     icon: tag.attributes.icon || undefined,
@@ -259,7 +310,7 @@ export async function fetchCategoryDetailsBySlug(slug: string): Promise<Category
 }
 
 export async function fetchDiscussionsByTag(tagSlug: string): Promise<Topic[]> {
-  const endpoint = `/discussions?filter[tag]=${tagSlug}&include=user,firstPost,tags,lastPostedUser,firstPost.user&sort=-lastPostedAt`;
+  const endpoint = `/discussions?filter[tag]=${tagSlug}&include=user,firstPost,tags,lastPostedUser&sort=-lastPostedAt`;
   const response = await flarumFetch<FlarumApiListResponse<FlarumDiscussion>>(endpoint);
 
   if (!response || !response.data) {
@@ -371,3 +422,5 @@ export async function submitReplyToDiscussion(discussionId: string, content: str
     }
     return null;
 }
+
+    
