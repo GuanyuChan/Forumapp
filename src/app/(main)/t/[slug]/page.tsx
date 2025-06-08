@@ -7,7 +7,7 @@ import { fetchDiscussionsByTag, fetchCategoryDetailsBySlug } from '@/services/fl
 import type { Topic, Category } from '@/lib/types';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { Rss, Home } from 'lucide-react'; // Added Home for breadcrumb
+import { Rss, ArrowLeft } from 'lucide-react'; // Added ArrowLeft
 
 interface CategoryPageProps {
   params: {
@@ -29,22 +29,23 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
   return (
     <div className="space-y-8">
-      <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-4">
-        <Link href="/" className="hover:underline flex items-center">
-          <Home className="h-4 w-4 mr-1.5" />
-          Home
+      <div className="flex items-center gap-3 mb-4">
+        <Link href="/" passHref>
+          <button className="flex items-center gap-2 px-3 py-1.5 border rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground text-foreground/80">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Forums
+          </button>
         </Link>
-        <span>/</span>
-        <span className="font-medium text-foreground">{categoryDetails.name}</span>
-      </nav>
+        <h1 className="text-xl font-semibold text-foreground">{categoryDetails.name}</h1>
+      </div>
 
       <section className="pb-6 border-b">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight text-foreground font-headline mb-1" style={categoryDetails.color ? { color: categoryDetails.color } : {}}>
+                <h2 className="text-3xl font-bold tracking-tight text-foreground font-headline mb-1" style={categoryDetails.color ? { color: categoryDetails.color } : {}}>
                 {categoryDetails.icon && <i className={`${categoryDetails.icon} mr-2`}></i>}
                 {categoryDetails.name}
-                </h1>
+                </h2>
                 {categoryDetails.description && (
                 <p className="text-muted-foreground mt-1">{categoryDetails.description}</p>
                 )}
