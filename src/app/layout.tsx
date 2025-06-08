@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 export const metadata: Metadata = {
   title: 'Zenith Forums',
   description: 'A modern forum application.',
+  // No explicit 'icons' field is set, allowing Next.js to use conventions.
+  // This is to avoid potential issues if a src/app/favicon.ico.mjs file is causing errors.
 };
 
 export default function RootLayout({
