@@ -1,45 +1,47 @@
 
 import { notFound as nextNotFound } from 'next/navigation';
 import type { Topic, Post as PostType, User } from '@/lib/types';
-import { fetchDiscussionDetails /*, submitReplyToDiscussion */ } from '@/services/flarum'; // submitReplyToDiscussion might be part of a Server Action later
+import { fetchDiscussionDetails } from '@/services/flarum';
 import { placeholderUser } from '@/lib/placeholder-data';
 
 import { PostCard } from '@/components/PostCard';
 import { CreatePostForm } from '@/components/CreatePostForm';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-// import { Skeleton } from '@/components/ui/skeleton'; // Not used in current version
-import { UserCircle2, Clock, Tag } from 'lucide-react'; // Removed unused icons
+import { UserCircle2, Clock } from 'lucide-react';
 import Link from 'next/link';
-// import { useToast } from '@/hooks/use-toast'; // Cannot use in Server Components
-import { format, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 
 // Helper function to simulate fetching current user details - This should ideally come from server session.
 const getCurrentUser = (): User => {
+  // In a real app, this would come from an authentication system.
   return placeholderUser;
 };
 
 export default async function TopicPage({ params }: { params: { topicId: string } }) {
   const topicIdFromParam = params.topicId;
-  const currentUser = getCurrentUser();
+  const currentUser = getCurrentUser(); // Fetch current user details
 
   const fetchedTopicAndPosts = await fetchDiscussionDetails(topicIdFromParam);
 
   if (!fetchedTopicAndPosts) {
-    nextNotFound();
+    nextNotFound(); // Triggers the Next.js 404 page
   }
 
   const { topic, posts: initialPosts } = fetchedTopicAndPosts;
 
-  // Placeholder for reply handling - this will need to be a Server Action
+  // Placeholder for reply handling - this will need to be converted to a Server Action
   const handleCreateReply = async (content: string, parentPostId?: string) => {
+    // If this were a Server Action defined in this file, it would need 'use server';
+    // For now, it's just a placeholder.
     if (!topic) return;
-    console.log('Replying (Server Action needed):', { topicId: topic.id, content, parentPostId, userId: currentUser.id });
-    // const newReplyData = await submitReplyToDiscussion(topic.id, content, currentUser.id);
-    // if (newReplyData) {
-    //   // Revalidate path or use client-side state management in a child component for optimistic updates
-    //   // toast({ title: "Reply posted!", description: "Your reply has been added." });
+    console.log('Replying (Server Action to be implemented):', { topicId: topic.id, content, parentPostId, userId: currentUser.id });
+    // Example of what a server action call might look like:
+    // const result = await submitReplyAction({ discussionId: topic.id, content, parentPostId });
+    // if (result.success) {
+    //   // revalidatePath(`/topics/${topic.id}`);
+    //   // toast({ title: "Reply posted!" });
     // } else {
-    //   // toast({ title: "Error", description: "Failed to post reply.", variant: "destructive" });
+    //   // toast({ title: "Error", description: result.error, variant: "destructive" });
     // }
   };
 
@@ -79,7 +81,7 @@ export default async function TopicPage({ params }: { params: { topicId: string 
                   <Link key={tag.id} href={`/t/${tag.slug}`}>
                     <span
                         className="px-2.5 py-1 bg-secondary text-secondary-foreground rounded-full text-xs font-medium hover:bg-secondary/80 transition-colors"
-                        style={tag.color ? { backgroundColor: tag.color, color: 'white'} : {}} // Basic contrast for tag color
+                        style={tag.color ? { backgroundColor: tag.color, color: 'white'} : {}}
                     >
                         {tag.name}
                     </span>
@@ -94,7 +96,7 @@ export default async function TopicPage({ params }: { params: { topicId: string 
           <PostCard
             key={post.id}
             post={post}
-            onReply={handleCreateReply} // This will need to trigger a server action
+            onReply={handleCreateReply} // This onReply will need to trigger a server action. PostCard is a client component.
             topicId={topic.id}
             currentUserId={currentUser.id}
           />
@@ -103,8 +105,9 @@ export default async function TopicPage({ params }: { params: { topicId: string 
 
       <div className="pt-6 border-t">
         <h2 className="text-xl font-semibold mb-3 text-foreground font-headline">Join the Conversation</h2>
+        {/* CreatePostForm is a Client Component. Its onSubmit will eventually call a Server Action. */}
         <CreatePostForm
-          onSubmit={(content) => handleCreateReply(content)} // This form will eventually use a Server Action
+          onSubmit={(content) => handleCreateReply(content)}
           placeholder="Write your reply..."
           submitButtonText="Post Reply"
           isReplyForm={true}
@@ -121,11 +124,11 @@ export async function generateMetadata({ params }: { params: { topicId: string }
 
   if (!fetchedData?.topic) {
     return {
-      title: 'Topic Not Found',
+      title: 'Topic Not Found - Zenith Forums',
     };
   }
   return {
     title: `${fetchedData.topic.title} - Zenith Forums`,
-    description: fetchedData.topic.firstPost?.content.substring(0, 150) || `View the discussion on ${fetchedData.topic.title}.`,
+    description: fetchedData.topic.firstPost?.content.substring(0, 160) || `View the discussion on ${fetchedData.topic.title}.`,
   };
 }
