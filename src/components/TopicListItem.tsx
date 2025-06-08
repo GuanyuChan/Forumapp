@@ -1,6 +1,6 @@
 
 import Link from 'next/link';
-import type { Topic } from '@/lib/types';
+import type { Topic, CategorySummary } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { MessageSquare, Eye, Tag, UserCircle2, Clock } from 'lucide-react';
@@ -8,16 +8,28 @@ import { formatDistanceToNow } from 'date-fns';
 
 interface TopicListItemProps {
   topic: Topic;
+  currentCategoryPageSlug?: string; // New optional prop
 }
 
 const DEFAULT_AVATAR_PLACEHOLDER = 'https://placehold.co/100x100.png';
 
-export function TopicListItem({ topic }: TopicListItemProps) {
-  const categoryToDisplay = topic.category || (topic.tags && topic.tags.length > 0 ? topic.tags[0] : undefined);
+export function TopicListItem({ topic, currentCategoryPageSlug }: TopicListItemProps) {
+  let categoryToDisplay: CategorySummary | undefined = undefined;
+
+  if (currentCategoryPageSlug && topic.tags) {
+    const currentPageTag = topic.tags.find(tag => tag.slug === currentCategoryPageSlug);
+    if (currentPageTag) {
+      categoryToDisplay = currentPageTag;
+    }
+  }
+
+  if (!categoryToDisplay) {
+    categoryToDisplay = topic.category || (topic.tags && topic.tags.length > 0 ? topic.tags[0] : undefined);
+  }
   
-  // topic.author is now guaranteed to be a User object by transformFlarumUser
-  const authorDisplayName = topic.author.username;
-  const authorAvatarUrl = topic.author.avatarUrl;
+  const author = topic.author || { id: 'unknown', username: 'Unknown User', avatarUrl: DEFAULT_AVATAR_PLACEHOLDER, joinedAt: new Date().toISOString() };
+  const authorDisplayName = author.username;
+  const authorAvatarUrl = author.avatarUrl;
   const authorInitials = authorDisplayName.substring(0, 2).toUpperCase();
 
   return (
@@ -33,11 +45,11 @@ export function TopicListItem({ topic }: TopicListItemProps) {
             <Avatar className="h-5 w-5 mr-1.5">
               <AvatarImage src={authorAvatarUrl === DEFAULT_AVATAR_PLACEHOLDER ? undefined : authorAvatarUrl} alt={authorDisplayName} data-ai-hint="user avatar small"/>
               <AvatarFallback className="flex items-center justify-center">
-                {authorDisplayName !== 'Unknown User' && authorAvatarUrl !== DEFAULT_AVATAR_PLACEHOLDER ? (
-                  <span className="text-xs font-semibold">{authorInitials}</span>
-                ) : (
-                  <UserCircle2 className="h-full w-full text-muted-foreground" />
-                )}
+                 {authorDisplayName !== 'Unknown User' && authorAvatarUrl !== DEFAULT_AVATAR_PLACEHOLDER ? (
+                    <span className="text-xs font-semibold">{authorInitials}</span>
+                 ) : (
+                    <UserCircle2 className="h-full w-full text-muted-foreground" />
+                 )}
               </AvatarFallback>
             </Avatar>
             {authorDisplayName}

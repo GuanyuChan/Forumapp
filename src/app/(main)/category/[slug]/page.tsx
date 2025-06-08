@@ -7,7 +7,7 @@ import { fetchDiscussionsByTag, fetchCategoryDetailsBySlug } from '@/services/fl
 import type { Topic, Category } from '@/lib/types';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { Rss, ArrowLeft } from 'lucide-react'; // Added ArrowLeft
+import { Rss, ArrowLeft } from 'lucide-react'; 
 
 interface CategoryPageProps {
   params: {
@@ -71,7 +71,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       {topics.length > 0 ? (
         <div className="space-y-4">
           {topics.map(topic => (
-            <TopicListItem key={topic.id} topic={topic} />
+            <TopicListItem key={topic.id} topic={topic} currentCategoryPageSlug={slug} />
           ))}
         </div>
       ) : (
