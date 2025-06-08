@@ -1,3 +1,4 @@
+
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -19,32 +20,30 @@ export function Header() {
   const pathname = usePathname();
 
   const NavLink = ({ href, label, icon: Icon }: typeof navItems[0] & { icon: React.ElementType }) => (
-    <Link href={href} passHref legacyBehavior>
-      <a
-        className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-          "hover:bg-accent hover:text-accent-foreground",
-          pathname === href ? "bg-primary/10 text-primary" : "text-foreground/70 hover:text-foreground"
-        )}
-      >
-        <Icon className="h-5 w-5" />
-        <span className="hidden md:inline">{label}</span>
-      </a>
+    <Link
+      href={href}
+      className={cn(
+        "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+        "hover:bg-accent hover:text-accent-foreground",
+        pathname === href ? "bg-primary/10 text-primary" : "text-foreground/70 hover:text-foreground"
+      )}
+    >
+      <Icon className="h-5 w-5" />
+      <span className="hidden md:inline">{label}</span>
     </Link>
   );
   
   const MobileNavLink = ({ href, label, icon: Icon }: typeof navItems[0] & { icon: React.ElementType }) => (
-     <Link href={href} passHref legacyBehavior>
-      <a
-        className={cn(
-          "flex items-center gap-3 px-4 py-3 rounded-md text-base font-medium transition-colors",
-          "hover:bg-accent hover:text-accent-foreground",
-           pathname === href ? "bg-primary/10 text-primary" : "text-foreground/80 hover:text-foreground"
-        )}
-      >
-        <Icon className="h-5 w-5" />
-        <span>{label}</span>
-      </a>
+     <Link
+      href={href}
+      className={cn(
+        "flex items-center gap-3 px-4 py-3 rounded-md text-base font-medium transition-colors",
+        "hover:bg-accent hover:text-accent-foreground",
+         pathname === href ? "bg-primary/10 text-primary" : "text-foreground/80 hover:text-foreground"
+      )}
+    >
+      <Icon className="h-5 w-5" />
+      <span>{label}</span>
     </Link>
   );
 
