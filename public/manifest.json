@@ -1,9 +1,10 @@
 {
   "name": "11A4008深论坛",
-  "short_name": "11A4008论坛",
-  "description": "一个现代化的论坛应用，专为11A4008社区打造。",
+  "short_name": "11A4008深论坛",
+  "description": "一个现代化的论坛应用。",
   "start_url": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#F0F4F8",
   "theme_color": "#64B5F6",
   "icons": [
