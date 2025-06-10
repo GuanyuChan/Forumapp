@@ -16,7 +16,8 @@ interface CategoryPageProps {
 }
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
-  const { slug } = params;
+  const resolvedParams = await Promise.resolve(params);
+  const { slug } = resolvedParams;
 
   const categoryDetails: Category | null = await fetchCategoryDetailsBySlug(slug);
 
@@ -61,7 +62,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 }
 
 export async function generateMetadata({ params }: CategoryPageProps) {
-  const { slug } = params;
+  const resolvedParams = await Promise.resolve(params);
+  const { slug } = resolvedParams;
   const categoryDetails = await fetchCategoryDetailsBySlug(slug);
 
   if (!categoryDetails) {
